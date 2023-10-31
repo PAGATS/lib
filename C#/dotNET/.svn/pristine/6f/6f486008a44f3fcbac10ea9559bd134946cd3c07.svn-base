@@ -1,0 +1,65 @@
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Windows.Forms;
+
+using CH.IO.Comm;
+using CH.IO.Service;
+
+using tbSharedMemory;
+
+namespace tbIPC_Client
+{
+    public partial class Client : Form
+    {
+        USART serial = null;
+        IPC ipc = null;
+
+        SharedMemory sm = new SharedMemory();
+
+        public Client()
+        {
+            InitializeComponent();
+        }
+
+        private void Client_Load(object sender, EventArgs e)
+        {
+            USART.CONFIG config_usart = new USART.CONFIG();
+            config_usart.PortName = "COM3";
+            serial = new USART();
+            serial.Open(config_usart);
+
+            IPC.CONFIG config_ipc = new IPC.CONFIG();
+            config_ipc.RgClass = sm;
+            config_ipc.RgClassType = typeof(SharedMemory);
+            ipc = new IPC();
+            ipc.OnMsg += new INTERFACE.MsgEventHandler(ipc_OnMsg);
+
+            ipc.Connect(serial, config_ipc);
+        }
+
+        void ipc_OnMsg(object sender, Type type, object msg)
+        {
+            if (type == typeof(SharedMemory))
+            {
+                sm = (SharedMemory)msg;
+                tbMsg.Text = sm.memo;
+            }
+        }
+
+        private void Client_FormClosing(object sender, FormClosingEventArgs e)
+        {
+
+        }
+
+        private void btSend_Click(object sender, EventArgs e)
+        {
+            sm.memo = tbMsg.Text;
+            ipc.Send(typeof(SharedMemory), sm);
+        }
+    }
+}

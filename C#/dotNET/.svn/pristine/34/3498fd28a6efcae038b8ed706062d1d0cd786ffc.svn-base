@@ -1,0 +1,59 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+
+namespace CH.IO.Comm
+{
+    abstract public class Device
+    {
+        abstract public void Open(object config);
+
+        abstract public void Read(byte datum);
+        abstract public void Read(byte[] buffer, int offset, int count);        
+
+        abstract public void Write(byte datum);        
+        abstract public void Write(byte[] buffer, int offset, int count);
+        abstract public void Write(string msg);
+
+        abstract public void Close();
+
+        public delegate void RxEventHandler(object sender, byte[] buffer, int count);
+        abstract public event RxEventHandler OnRxBuf;
+
+        public delegate void ErrorEventHandler(object sender, string error);
+        abstract public event ErrorEventHandler OnError;
+
+        #region UTILITIES
+        public static String AsciiToString(byte[] buffer, int count)
+        {
+            try
+            {
+                ASCIIEncoding ae = new ASCIIEncoding();
+                return new String(ae.GetChars(buffer, 0, count));
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public static byte[] StringToAscii(string str)
+        {
+            try
+            {
+                byte[] pStr = new byte[str.Length];
+                for (int i = 0; i < str.Length; i++)
+                {
+                    pStr[i] = System.Convert.ToByte(System.Convert.ToChar(str[i]));
+                }
+                return pStr;
+            }
+            catch
+            {
+                throw;
+            }
+        }
+        #endregion
+    }
+}

@@ -1,0 +1,110 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+
+using CH.IO;
+
+namespace CH.IO.Comm
+{
+    public class tbComm : Device
+    {
+        public override event RxEventHandler OnRxBuf = null;
+        public override event ErrorEventHandler OnError = null;
+        public override event MsgEventHandler OnMsg = null;
+
+        public class CONFIG
+        {
+
+
+        }
+
+        public override void Open(object config)
+        {
+            try
+            {
+            }
+            catch
+            { 
+                throw;
+            }
+        }
+
+        public override void Close()
+        {
+            try
+            {
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public override void Read(byte[] buffer, int offset, int count)
+        {
+            try
+            {
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public override void Read(byte datum)
+        {
+            try
+            {
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public override void Write(string msg)
+        {
+            try
+            {
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public override void Write(byte datum)
+        {
+            try
+            {
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public override void Write(byte[] buffer, int offset, int count)
+        {
+            try
+            {
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public void UniqueMethodForTest()
+        {
+            try
+            {
+            }
+            catch
+            {
+                throw;
+            }
+        }
+    }
+}

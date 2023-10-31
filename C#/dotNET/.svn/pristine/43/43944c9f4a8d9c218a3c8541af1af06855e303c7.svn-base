@@ -1,0 +1,39 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+
+namespace CH.IO.Comm
+{
+    abstract public class DEVICE
+    {
+        public class DEVICE_CONFIG { };
+        
+        // Blocking call
+        abstract public int Open(DEVICE_CONFIG config);
+
+        abstract public int Read(ref byte datum);
+
+        abstract public int Read(byte[] buffer, int offset, int count);
+
+        abstract public int Write(byte datum);
+
+        abstract public int Write(byte[] buffer, int offset, int count);
+
+        abstract public int Close();
+
+        abstract public object IOCtrl(Type type, object cmd);
+
+        // Non-blocking call        
+        abstract public bool IsOpen { get; }
+        abstract public int ByteToRead { get; }
+
+        // Event handler
+        abstract public event MsgEventHandler OnMsg;
+        abstract public event ErrorEventHandler OnError;
+
+        // delegate of Event handler
+        public delegate void MsgEventHandler(object sender, Type type, object msg);
+        public delegate void ErrorEventHandler(object sender, string source, Exception err);
+    }
+}

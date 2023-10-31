@@ -1,0 +1,79 @@
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Windows.Forms;
+
+using CH.IO.Comm;
+using CH.IO.Comm.Interface;
+
+namespace tbIPC
+{
+    public partial class Form1 : Form
+    {
+        USART serial = null;
+        IPC ipc = null;
+        RxClass rclass = null;
+        TxClass tclass = null;
+
+        public class RxClass
+        {
+            public double[] Rdata = new double[2048];
+        }
+
+        public class TxClass
+        {
+            public double[] Tdata = new double[2048];
+        }
+
+        public Form1()
+        {
+            InitializeComponent();
+        }
+
+        private void Form1_Load(object sender, EventArgs e)
+        {
+            rclass = new RxClass();
+            tclass = new TxClass();
+
+            serial = new USART();
+            serial.OnMsg += new DEVICE.MsgEventHandler(serial_OnMsg);
+            serial.OnError += new DEVICE.ErrorEventHandler(serial_OnError);
+            USART.CONFIG config = new USART.CONFIG();
+            config.PortName = "COM3";
+
+            serial.Open(config);
+
+            ipc = new IPC();
+            IPC.CONFIG cfg = new IPC.CONFIG();
+            cfg.OpenDevice = serial;
+            cfg.RxClass = rclass;
+            cfg.RxClassType = typeof(RxClass);
+            cfg.TxClass = tclass;
+            cfg.TxClassType = typeof(TxClass);
+
+            ipc.Connect(cfg);
+        }
+
+        void serial_OnError(object sender, string source, Exception err)
+        {
+        }
+
+        void serial_OnMsg(object sender, string type, object msg)
+        {
+        }
+
+        private void btSend_Click(object sender, EventArgs e)
+        {
+            ipc.thTxSync();
+        }
+
+        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            serial.Close();
+        }
+    }
+}

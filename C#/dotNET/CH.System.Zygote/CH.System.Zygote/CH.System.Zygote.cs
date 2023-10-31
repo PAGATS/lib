@@ -1,0 +1,210 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+using System.Threading;
+using System.Diagnostics;
+
+namespace CH.System
+{
+    public partial class Zygote
+    {
+        // One instance is one process manager. so if you want to run two proceses, you should make two instances of 
+        // Run "exe" files as process in Open method and get process handle number to manage after
+        // Manage opened processes that must change their text within some secs (it is going to be decided on it's creation time.)
+
+        public class CONFIG
+        {
+            public string ExePath = "";
+            public int ScanInterval = 100;
+        }
+
+        class VARIABLE
+        {
+            public CONFIG config = null;
+            public Process process = null;
+            public string processName = "";
+            public Thread thRevival = null;
+            public ManualResetEvent evThRevival = null;
+            public bool bThRevival = false;
+        }
+
+        VARIABLE g;
+        
+        public Zygote()
+        {
+            g = new VARIABLE();                   
+        }
+
+        public bool IsOpen
+        {
+            get
+            {
+                return (null != g.process) ? true : false;
+            }
+        }
+
+        public string ProcessName
+        {
+            get
+            {
+                try
+                {
+                    if(null != g.process)
+                    {
+                        return g.process.ProcessName;
+                    }
+                    throw new Exception("Process is not found");
+                }
+                catch
+                {
+                    throw;
+                }
+            }
+        }
+
+        void ThreadRevival()
+        {
+            while(g.bThRevival)
+            {
+                try
+                {
+                    if(!g.process.Responding)
+                    {
+                        g.process = Process.Start(g.config.ExePath);
+                        g.processName = g.process.ProcessName;
+                    }
+                    else
+                    {
+                        Thread.Sleep(10 + g.config.ScanInterval);
+                    }
+                }
+                catch{}
+            }
+            g.evThRevival.Set();
+        }
+
+        private void OpenProcess(object config)
+        {
+            try
+            {
+                if (null != g.process)
+                {
+                    CloseProcess();
+                }
+
+                g.config = (CONFIG)config;
+                g.process = Process.Start(g.config.ExePath);
+                g.processName = g.process.ProcessName;
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        private void OpenThread()
+        {
+            try
+            {
+                if (true == g.bThRevival)
+                {
+                    CloseThread();
+                }
+
+                g.bThRevival = true;
+                g.thRevival = new Thread(new ThreadStart(ThreadRevival));
+                g.evThRevival = new ManualResetEvent(false);
+                g.thRevival.Start();
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public void Open(object config)
+        {
+            try
+            {
+                OpenProcess(config);
+                OpenThread();
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        private void CloseThread()
+        {
+            try
+            {
+                if (true == g.bThRevival)
+                {
+                    g.bThRevival = false;
+                    g.evThRevival.WaitOne(g.config.ScanInterval * 10);
+                    g.thRevival = null;
+                    g.evThRevival = null;
+                }
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        private void CloseProcess()
+        {
+            try
+            {
+                if (null != g.process)
+                {
+                    try
+                    {
+                        g.process.CloseMainWindow();
+                    }                    
+                    catch
+                    {
+                        throw;
+                    }
+                    finally
+                    {
+                        g.process = null;
+                    }
+                }
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public void Close()
+        {
+            try
+            {
+                CloseThread();
+                CloseProcess();
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public void Write(string msg)
+        {
+            try
+            {
+                if (IsOpen)
+                {
+                    g.process.StandardInput.Write(msg);
+                }
+            }
+            catch
+            {
+                throw;
+            }
+        }
+    }
+}

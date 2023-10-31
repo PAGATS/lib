@@ -1,0 +1,359 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading;
+
+using CH.Data;
+using CH.Data.Parsing;
+using CH.IO.Comm;
+using CH.IO.Service;
+
+namespace CH.IO.Service
+{
+    /*
+ * <A>58e5 
+ * <N>a90a
+ * 
+ * 
+ */
+
+    public class Talk : INTERFACE
+    {
+        public class CONFIG
+        {
+            public Type type = null;
+        }
+
+        public class VARIABLES
+        {
+            public char STX;
+            public char ETX;
+            public CONFIG config = null;
+            public DEVICE OpenDevice = null;
+            public ParserCRC16 parser = null;
+            public string strOldMsg = "";
+            public Queue<string> qMsg = null;
+
+            public bool bThWrite = false;
+            public Thread ThWrite = null;
+            public ManualResetEvent evThWrite = null;
+            public int nWriteTimeOut = 0;
+
+            public VARIABLES()
+            {
+                STX = '<';
+                ETX = '>';
+                parser = new ParserCRC16();
+                strOldMsg = "";
+                qMsg = new Queue<string>();
+                bThWrite = false;
+                evThWrite = new ManualResetEvent(false);
+                nWriteTimeOut = 0;
+            }
+        }
+        VARIABLES g = null;
+
+        public Talk()
+        {
+            try
+            {
+                g = new VARIABLES();
+
+                g.parser = new ParserCRC16('<', '>');
+                g.parser.OnParsed += new ParserCRC16.PARSEREventHandler(parser_OnParsed);
+                g.parser.OnCRC16Error += new ParserCRC16.CRC16ErrorEventHandler(parser_OnCRC16Error);
+
+                g.bThWrite = true;
+                g.ThWrite = new Thread(new ThreadStart(ThreadWrite));
+                g.ThWrite.IsBackground = false;
+                g.ThWrite.Start();
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public Talk(char STX, char ETX, int nWriteTimeOut)
+        {
+            try
+            {
+                g = new VARIABLES();               
+
+                g.parser = new ParserCRC16(STX, ETX);
+                g.parser.OnParsed += new ParserCRC16.PARSEREventHandler(parser_OnParsed);
+                g.parser.OnCRC16Error += new ParserCRC16.CRC16ErrorEventHandler(parser_OnCRC16Error);
+
+                g.bThWrite = true;
+                g.ThWrite = new Thread(new ThreadStart(ThreadWrite));
+                g.ThWrite.IsBackground = false;
+                g.ThWrite.Start();
+
+                g.nWriteTimeOut = nWriteTimeOut;
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        void dev_OnError(object sender, string source, Exception err)
+        {
+            OnError(this, "dev_OnError", err);
+        }
+
+        public override int Connect(DEVICE openDevice, object config)
+        {
+            try
+            {
+                g.config = (CONFIG)config;
+                g.OpenDevice = (DEVICE)openDevice;
+
+                g.OpenDevice.OnMsg += new DEVICE.MsgEventHandler(dev_OnMsg);
+                g.OpenDevice.OnError += new DEVICE.ErrorEventHandler(dev_OnError);
+
+                g.bThWrite = true;
+                g.ThWrite = new Thread(new ThreadStart(ThreadWrite));
+                g.ThWrite.Start();
+                return 0;
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public override int Disconnect()
+        {
+            try
+            {
+                g.bThWrite = false;
+                g.evThWrite.WaitOne(300);
+                return 0;
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        void parser_OnCRC16Error(object sender)
+        {
+            try
+            {
+                // NAK
+                ACK("N");
+            }
+            catch (Exception ex)
+            {
+                if (null != OnError)
+                {
+                    OnError(this, "parser_OnCRC16Error", ex);
+                }
+            }
+        }
+
+        void parser_OnParsed(object sender, string msg)
+        {
+            try
+            {
+                if ("N" == msg)
+                {
+                    // Rewriting when NAK is arrived                    
+                    Rewrite(g.strOldMsg);
+                    return;
+                }
+                else
+                {
+                    if ("A" != msg)
+                    {
+                        // Data is arrived
+                        ACK("A");
+                        g.evThWrite.Set();
+                    }
+                    else
+                    {
+                        g.evThWrite.Set();
+                        return;
+                    }
+                }
+
+                if (null != OnMsg)
+                {
+                    OnMsg(this, "STRING", msg);
+                }
+            }
+            catch (Exception ex)
+            {
+                if (null != OnError)
+                {
+                    OnError(this, "parser_OnParsed", ex);
+                }
+            }
+        }
+
+        void dev_OnMsg(object sender, string type, object msg)
+        {
+            try
+            {
+                switch (type)
+                {
+                    case "CONNECTED":
+                        {
+                            if (null != OnMsg)
+                            {
+                                OnMsg(this, "CONNECTED", null);
+                            }
+                        }
+                        break;
+                    case "DISCONNECTED":
+                        {
+                            OnMsg(this, "DISCONNECTED", null);
+                        }
+                        break;
+                    case "READ":
+                        {
+                            byte[] pData = new byte[g.OpenDevice.ByteToRead];
+                            g.OpenDevice.Read(pData, 0, pData.Length);
+                            g.parser.Parsing(pData, pData.Length);
+                        }
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                if (null != OnError)
+                {
+                    OnError(this, "dev_OnMsg", ex);
+                }
+            }
+        }
+
+        void Rewrite(string msg)
+        {
+            try
+            {
+                byte[] pData = CH.Data.Convert.StringToAscii(msg);
+                g.OpenDevice.Write(pData, 0, pData.Length);
+            }
+            catch (Exception ex)
+            {
+                if (null != OnError)
+                {
+                    OnError(this, "Rewrite", ex);
+                }
+            }
+        }
+
+        void ACK(string msg)
+        {
+            try
+            {
+                string str = g.STX + msg + g.ETX + g.parser.CRC16(msg);
+                byte[] pData = CH.Data.Convert.StringToAscii(str);
+                g.OpenDevice.Write(pData, 0, pData.Length);
+            }
+            catch (Exception ex)
+            {
+                if (null != OnError)
+                {
+                    OnError(this, "ACK", ex);
+                }
+            }
+        }
+
+        public override int Send(Type type, object RegisteredClass)
+        {
+            try
+            {
+                if (null != g.OpenDevice)
+                {
+                    if (true == IsConnection)
+                    {
+                        if(type == typeof(string))
+                        {
+                            string msg = (string)RegisteredClass;
+                            string str = g.STX + msg + g.ETX + g.parser.CRC16(msg);
+                            g.qMsg.Enqueue(str);
+                        }
+                    }
+                }
+                else
+                {
+                    throw new Exception("Port is not opened yet.");
+                }
+                return 0;
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        void ThreadWrite()
+        {
+            while (true == g.bThWrite)
+            {
+                try
+                {
+                    if (0 < g.qMsg.Count)
+                    {
+                        g.strOldMsg = g.qMsg.Dequeue();
+                        byte[] pData = CH.Data.Convert.StringToAscii(g.strOldMsg);
+                        g.OpenDevice.Write(pData, 0, pData.Length);
+                    }
+                    g.evThWrite.WaitOne(g.nWriteTimeOut); // Wait 300ms time out.
+                    g.evThWrite.Reset();
+                }
+                catch (Exception ex)
+                {
+                    if (null != OnError)
+                    {
+                        OnError(this, "ThreadWrite", ex);
+                    }
+                }
+            }
+            g.evThWrite.Set();
+        }
+
+        public override object IOCtrl(string type, object cmd)
+        {
+            try
+            {
+                return 0;
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public override bool IsConnection
+        {
+            get
+            {
+                try
+                {
+                    if (null != g.OpenDevice)
+                    {
+                        if (g.OpenDevice.IsOpen)
+                        {
+                            return true;
+                        }
+                    }
+                    return false;
+                }
+                catch
+                {
+                    throw;
+                }
+            }
+        }
+
+        // Extension for CH
+        public override event MsgEventHandler OnMsg;
+
+        public override event ErrorEventHandler OnError;
+    }
+}

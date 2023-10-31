@@ -1,0 +1,170 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.IO;
+using System.Xml;
+using System.Xml.Serialization;
+
+using CH.Data;
+using CH.IO.Comm;
+using CH.IO.Service;
+
+namespace CH.IO.Service
+{
+    public class IPC : INTERFACE
+    {
+        private class VARIABLE
+        {
+            public object RgClass = null;
+            public Type RgClassType = null;
+            public DEVICE OpenDevice = null;
+            public MemoryStream MemStream = null;
+        }
+        private VARIABLE g;
+
+        public class CONFIG
+        {
+            public object RgClass = null;
+            public Type RgClassType = null;
+        }
+
+        public IPC()
+        {
+            try
+            {
+                g = new VARIABLE();
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        // Standard Method for POSIX
+        public override int Connect(DEVICE openDevice, object config)
+        {
+            try
+            {
+                CONFIG cfg = (CONFIG)config;
+                g.RgClass = cfg.RgClass;
+                g.RgClassType = cfg.RgClassType;
+                g.OpenDevice = (DEVICE)openDevice;
+                g.OpenDevice.OnMsg += new DEVICE.MsgEventHandler(OpenDevice_OnMsg);
+                g.OpenDevice.OnError += new DEVICE.ErrorEventHandler(OpenDevice_OnError);
+                return 0;
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public override int Send(Type type, object RegisteredClass)
+        {
+            try
+            {
+                if (null != g.OpenDevice)
+                {
+                    using (MemoryStream ms = new MemoryStream())
+                    {
+                        XmlSerializer xs = new XmlSerializer(type);
+                        xs.Serialize(ms, RegisteredClass);
+                        ms.Flush();
+                        g.OpenDevice.Write(ms.GetBuffer(), 0, (int)ms.Length);
+                        ms.Close();
+                    }
+                    return 0;
+                }
+                return -1;
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+
+        public override int Disconnect()
+        {
+            try
+            {
+                return 0;
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        // Standard Method for Semi-POSIX
+        public override object IOCtrl(Type type, object cmd)
+        {
+            try
+            {
+                return 0;
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public override bool IsConnection
+        {
+            get
+            {
+                return false;
+            }
+        }
+
+        // Extension for CH
+        public override event MsgEventHandler OnMsg;
+
+        public override event ErrorEventHandler OnError;
+
+        void OpenDevice_OnError(object sender, string source, Exception err)
+        {
+
+        }
+
+        void OpenDevice_OnMsg(object sender, Type type, object msg)
+        {
+            try
+            {
+                switch (type.FullName)
+                {
+                    case "System.Byte[]":
+                        {
+                            byte[] pData = new byte[g.OpenDevice.ByteToRead];
+                            g.OpenDevice.Read(pData, 0, pData.Length);
+
+                            if (null == g.MemStream)
+                            {
+                                g.MemStream = new MemoryStream();
+                            }                            
+                            g.MemStream.Write(pData, 0, pData.Length);
+
+                            XmlSerializer xs = new XmlSerializer(g.RgClassType);
+                            g.MemStream.Position = 0;
+                            object temp = xs.Deserialize(g.MemStream);
+                            g.RgClass = System.Convert.ChangeType(temp, g.RgClassType);
+
+                            g.MemStream.Close();
+                            g.MemStream = null;
+
+                            if (null != OnMsg)
+                            {
+                                OnMsg(this, g.RgClassType, g.RgClass);
+                            }
+                        }
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                OnError(this, "OpenDevice_OnMsg", ex);
+            }
+        }
+    }
+}

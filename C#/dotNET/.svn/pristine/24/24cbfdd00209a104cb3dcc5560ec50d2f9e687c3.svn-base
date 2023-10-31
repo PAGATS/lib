@@ -1,0 +1,27 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+
+namespace AS5216Server
+{
+    public class AS5216ServerMemory
+    {
+        // Addrsss
+        public string Address;
+        public int Offset;
+
+        // Data
+        public string SerialNumber;
+        public double[] Spectrum;
+        public ushort NumPixels;
+
+        public AS5216ServerMemory()
+        {
+            Address = "";
+            Offset = 0;
+            Spectrum = new double[2048];
+            NumPixels = 2048;
+        }
+    }
+}

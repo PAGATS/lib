@@ -1,0 +1,16 @@
+obj\Debug\C_Sharp_Application.exe
+obj\Debug\C_Sharp_Application.pdb
+bin\Release\C_Sharp_Application.exe
+obj\Release\ResolveAssemblyReference.cache
+obj\Release\C_Sharp_Application.AnalogIO.resources
+obj\Release\C_Sharp_Application.DigitalIO.resources
+obj\Release\C_Sharp_Application.Form1.resources
+obj\Release\C_Sharp_Application.csproj.GenerateResource.Cache
+obj\Release\C_Sharp_Application.exe
+bin\Debug\C_Sharp_Application.exe
+bin\Debug\C_Sharp_Application.pdb
+obj\Debug\ResolveAssemblyReference.cache
+obj\Debug\C_Sharp_Application.AnalogIO.resources
+obj\Debug\C_Sharp_Application.DigitalIO.resources
+obj\Debug\C_Sharp_Application.Form1.resources
+obj\Debug\C_Sharp_Application.csproj.GenerateResource.Cache

@@ -1,0 +1,26 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "dotNet_IPC", "dotNet_IPC\dotNet_IPC.csproj", "{20B5B5C0-F2CD-4015-8CA4-B31DEF3D83DC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RemoteObject_Prj", "..\dotNet_IPC_Client\RemoteObject_Prj\RemoteObject_Prj.csproj", "{EBE28CF2-F626-486E-87BB-C4AADC43F002}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{20B5B5C0-F2CD-4015-8CA4-B31DEF3D83DC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{20B5B5C0-F2CD-4015-8CA4-B31DEF3D83DC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{20B5B5C0-F2CD-4015-8CA4-B31DEF3D83DC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{20B5B5C0-F2CD-4015-8CA4-B31DEF3D83DC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EBE28CF2-F626-486E-87BB-C4AADC43F002}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EBE28CF2-F626-486E-87BB-C4AADC43F002}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EBE28CF2-F626-486E-87BB-C4AADC43F002}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EBE28CF2-F626-486E-87BB-C4AADC43F002}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

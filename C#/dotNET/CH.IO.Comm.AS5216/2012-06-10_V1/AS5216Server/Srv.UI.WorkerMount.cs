@@ -1,0 +1,206 @@
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Windows.Forms;
+using System.Threading;
+using System.Windows.Forms.DataVisualization.Charting;
+
+using CH.IO.Comm;
+
+namespace AS5216Server
+{
+    public partial class UI : Form
+    {
+        private void AvantesUSB_Mount()
+        {
+            try
+            {
+                MSG("<AvantesUSB_Mount>");
+                g.evMountWorker.Reset();
+                
+                g.ui.nProgress = 5;
+                g.avst = AS5216.Mount(this.Handle);
+                g.nAvsCount = g.avst.Length;
+
+                g.ui.nProgress = 6;
+                g.pqSpectrum = new Queue<double[]>[g.nAvsCount];
+                g.avs = new AS5216[g.nAvsCount];
+                g.SharedMemory = new AS5216ServerMemory[g.nAvsCount];
+                g.ui.pfYSeries = new double[g.nAvsCount][];
+
+                g.ui.series = new Series[g.nAvsCount];
+
+                for (int i = 0; i < g.nAvsCount; i++)
+                {
+                    ConnectAS5216(i); // index is a avantes object number.             
+
+                    g.pqSpectrum[i] = new Queue<double[]>();                    
+                    g.SharedMemory[i] = new AS5216ServerMemory();
+                    g.SharedMemory[i].NumPixels = g.avs[i].GetNumPixels;
+                    g.SharedMemory[i].SerialNumber = g.avst[i].SerialNumber;                    
+                    g.SharedMemory[i].Address = "Lamda";
+                    g.SharedMemory[i].Offset = i;
+                    g.SharedMemory[i].Spectrum = g.avs[i].GetLambda;
+
+                    if(g.config.bChart)
+                    {
+                        g.ui.series[i] = new Series();
+                        g.ui.series[i].ChartArea = "ChartArea1";
+                        g.ui.series[i].ChartType = System.Windows.Forms.DataVisualization.Charting.SeriesChartType.Line;
+                        g.ui.series[i].Legend = "Legend1";
+                        g.ui.series[i].Name = g.avst[i].UserFriendlyName;
+                        ChartSpectrum.Series.Add(g.ui.series[i]);
+                    }
+                }
+                g.ui.nSeriesCount = g.nAvsCount;
+
+                BootComplete();
+                g.ui.nProgress = 8;
+            }
+            catch (System.Exception ex)
+            {
+                Error("AvantesUSB_Mount", ex);
+            }
+        }
+
+        private void AvantesUSB_Unmount()
+        {
+            try
+            {
+                MSG("<AvantesUSB_Unmount>");
+                for (int i = 0; i < g.nAvsCount; i++)
+                {
+                    DisconnectAS5216(i);
+                }
+                AS5216.Unmount();
+                 
+                g.evMountWorker.Set();
+            }
+            catch (System.Exception ex)
+            {
+                Error("AvantesUSB_Unmount", ex);
+            }
+        }
+
+        private void GetAvantesInfo()
+        {
+            try
+            {
+                MSG("<GetAvantesInfo>");
+                if(null != g.avs)
+                {
+                    for (int i = 0; i < g.nAvsCount; i++)
+                    {
+                        AS5216.VERSION_INFO info = g.avs[i].GetVersionInfo;
+                        ushort pixelcnt = g.avs[i].GetNumPixels;
+                        double[] lambda = g.avs[i].GetLambda;
+                        AS5216.DeviceConfigType devType = g.avs[i].GetParameter;
+                        string sensorType = g.avs[i].GetSensorType;
+                    }
+                }                
+            }
+            catch (System.Exception ex)
+            {
+                Error("GetAvantesInfo", ex);
+            }
+        }
+
+        void WatchDog()
+        {
+            try
+            {
+                if(0 < g.nAvsCount)
+                {
+                    if(null != g.SharedMemory[0].Spectrum)
+                    {
+                        if(g.fWatchDogFood == g.SharedMemory[0].Spectrum[0])
+                        {
+                            g.nWatchDogCount++;
+                        }
+                        else
+                        {
+                            g.fWatchDogFood = g.SharedMemory[0].Spectrum[0];
+                            g.nWatchDogCount = 0;
+                        }
+
+                        if (20 <= g.nWatchDogCount)
+                        {
+                            for (int i = 0; i < g.nAvsCount; i++)
+                            {
+                                DisconnectAS5216(i);
+                                Thread.Sleep(100);
+                                ConnectAS5216(i);
+                                Thread.Sleep(100);
+                            }
+                            Error("WatchDog", new Exception("BowWow! " + DateTime.Now.ToString("yyyy-MM-dd, hh:mm:ss")));
+                            g.nWatchDogCount = 0;
+                        }
+                    }                    
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Error("WatchDog", ex);
+            }
+        }
+
+        private void MountWorker_DoWork(object sender, DoWorkEventArgs e)
+        {
+            AvantesUSB_Mount();
+            while(true == g.bMountWorker)
+            {
+                WatchDog();
+                SentSpectrumIPC();
+                System.Threading.Thread.Sleep(100);
+            }
+            AvantesUSB_Unmount();
+        }
+
+        private void SentSpectrumIPC()
+        {
+            try
+            {
+                for (int i = 0; i < g.ui.nSeriesCount; i++)
+                {
+                    int nCount = g.pqSpectrum[i].Count;
+                    if (0 < nCount)
+                    {
+                        for(int j = 0 ; j < nCount ; j++)
+                        {
+                            g.SharedMemory[i].Spectrum = g.pqSpectrum[i].Dequeue();
+                        }
+                        
+                        if (true == g.ipc.IsConnection)
+                        {
+                            g.SharedMemory[i].Tick();
+                            g.SharedMemory[i].Address = "Spectrum";
+                            g.SharedMemory[i].Offset = i;
+                            if (g.config.bContinuousMode)
+                            {
+                                g.ipc.Send(typeof(AS5216ServerMemory), g.SharedMemory[i]);
+                            }
+                        }
+                    }
+
+                    if (true == g.config.bChart)
+                    {
+                        g.ui.pfYSeries[i] = g.SharedMemory[i].Spectrum;
+                    }
+                }
+            }
+            catch (System.Exception ex)
+            {
+                Error("SentSpectrumIPC", ex);
+            }
+        }
+
+        private void MountWorker_ProgressChanged(object sender, ProgressChangedEventArgs e)
+        {
+            
+        }
+    }
+}

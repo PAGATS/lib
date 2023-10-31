@@ -1,0 +1,93 @@
+﻿namespace tbAS5216
+{
+    partial class tbAS5216
+    {
+        /// <summary>
+        /// Required designer variable.
+        /// </summary>
+        private System.ComponentModel.IContainer components = null;
+
+        /// <summary>
+        /// Clean up any resources being used.
+        /// </summary>
+        /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing && (components != null))
+            {
+                components.Dispose();
+            }
+            base.Dispose(disposing);
+        }
+
+        #region Windows Form Designer generated code
+
+        /// <summary>
+        /// Required method for Designer support - do not modify
+        /// the contents of this method with the code editor.
+        /// </summary>
+        private void InitializeComponent()
+        {
+            this.btOpen = new System.Windows.Forms.Button();
+            this.btClose = new System.Windows.Forms.Button();
+            this.tbResult = new System.Windows.Forms.TextBox();
+            this.SuspendLayout();
+            // 
+            // btOpen
+            // 
+            this.btOpen.FlatStyle = System.Windows.Forms.FlatStyle.Popup;
+            this.btOpen.Font = new System.Drawing.Font("Arial", 18F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btOpen.Location = new System.Drawing.Point(12, 133);
+            this.btOpen.Name = "btOpen";
+            this.btOpen.Size = new System.Drawing.Size(142, 44);
+            this.btOpen.TabIndex = 0;
+            this.btOpen.Text = "Open";
+            this.btOpen.UseVisualStyleBackColor = true;
+            this.btOpen.Click += new System.EventHandler(this.btOpen_Click);
+            // 
+            // btClose
+            // 
+            this.btClose.FlatStyle = System.Windows.Forms.FlatStyle.Popup;
+            this.btClose.Font = new System.Drawing.Font("Arial", 18F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.btClose.Location = new System.Drawing.Point(12, 183);
+            this.btClose.Name = "btClose";
+            this.btClose.Size = new System.Drawing.Size(142, 44);
+            this.btClose.TabIndex = 1;
+            this.btClose.Text = "Close";
+            this.btClose.UseVisualStyleBackColor = true;
+            this.btClose.Click += new System.EventHandler(this.btClose_Click);
+            // 
+            // tbResult
+            // 
+            this.tbResult.Location = new System.Drawing.Point(12, 106);
+            this.tbResult.Name = "tbResult";
+            this.tbResult.Size = new System.Drawing.Size(463, 21);
+            this.tbResult.TabIndex = 2;
+            // 
+            // tbAS5216
+            // 
+            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.ClientSize = new System.Drawing.Size(487, 350);
+            this.Controls.Add(this.tbResult);
+            this.Controls.Add(this.btClose);
+            this.Controls.Add(this.btOpen);
+            this.Font = new System.Drawing.Font("Arial", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
+            this.Name = "tbAS5216";
+            this.Text = "tbAS5216";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.tbAS5216_FormClosing);
+            this.Load += new System.EventHandler(this.tbAS5216_Load);
+            this.ResumeLayout(false);
+            this.PerformLayout();
+
+        }
+
+        #endregion
+
+        private System.Windows.Forms.Button btOpen;
+        private System.Windows.Forms.Button btClose;
+        private System.Windows.Forms.TextBox tbResult;
+    }
+}
+

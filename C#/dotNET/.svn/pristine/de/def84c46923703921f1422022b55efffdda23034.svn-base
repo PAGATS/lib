@@ -1,0 +1,34 @@
+[3888] (03:04:07.670125)[ AVANTES . btnCommunication_Click] ¢º AVS5216.AVS_Init(0)
+[3888] (03:04:07.670125)[ AVANTES . btnCommunication_Click] ¢º AVS5216.AVS_Register(this.Handle)
+[3888] (03:04:09.435750)[ AVANTES . btnUpdateList_Click] ¢º AVS5216.AVS_GetNrOfDevices();
+[3888] (03:04:09.435750)[ AVANTES . btnUpdateList_Click] ¢º AVS5216.AVS_GetList(l_Size, ref l_RequiredSize, ref l_Data[0]);
+[3888] (03:04:17.951375)[ AVANTES . btnActivate_Click] ¢º (long)AVS5216.AVS_Activate(ref l_Active);
+[3888] (03:04:18.451375)[ AVANTES . btnUpdateList_Click] ¢º AVS5216.AVS_GetNrOfDevices();
+[3888] (03:04:18.451375)[ AVANTES . btnUpdateList_Click] ¢º AVS5216.AVS_GetList(l_Size, ref l_RequiredSize, ref l_Data[0]);
+[3888] (03:04:18.467000)[ AVANTES . ConnectGui] ¢º (int)AVS5216.AVS_GetVersionInfo((IntPtr)m_DeviceHandle, ref a_Fpga[0], ref a_As5216[0], ref a_Dll[0]);
+[3888] (03:04:18.467000)[ AVANTES . ConnectGui] ¢º if (AVS5216.ERR_SUCCESS == (int)AVS5216.AVS_GetNumPixels((IntPtr)m_DeviceHandle, ref m_NrPixels))
+[3888] (03:04:18.467000)[ AVANTES . ConnectGui] ¢º (int)AVS5216.AVS_GetParameter((IntPtr)m_DeviceHandle, l_Size, ref l_Size, ref l_Data[0]);
+[3888] (03:04:18.467000)[ AVANTES . ConnectGui] ¢º (int)AVS5216.AVS_GetParameter((IntPtr)m_DeviceHandle, l_Size, ref l_Size, ref l_Data[0]);
+[3888] (03:04:18.482625)[ AVANTES . btnReadMeasFromEEProm_Click] ¢º (int)AVS5216.AVS_GetParameter((IntPtr)m_DeviceHandle, l_Size, ref l_Size, ref l_Data[0]);
+[3888] (03:04:18.482625)[ AVANTES . btnReadMeasFromEEProm_Click] ¢º (int)AVS5216.AVS_GetParameter((IntPtr)m_DeviceHandle, l_Size, ref l_Size, ref l_Data[0]);
+[3888] (03:04:29.248250)[ AVANTES . btnStartMeasurement_Click] ¢º (int)AVS5216.AVS_PrepareMeasure((IntPtr)m_DeviceHandle, ref l_PrepareMeasData);
+[3888] (03:04:29.248250)[ AVANTES . btnStartMeasurement_Click] ¢º (int)AVS5216.AVS_Measure((IntPtr)m_DeviceHandle, this.Handle, l_NrOfScans);
+[3888] (03:04:29.295125)[ AVANTES . WndProc] ¢º if (0 == (int)AVS5216.AVS_GetLambda((IntPtr)m_DeviceHandle, ref m_Lambda[0]))
+[3888] (03:04:29.295125)[ AVANTES . WndProc] ¢º if (AVS5216.ERR_SUCCESS == (int)AVS5216.AVS_GetScopeData((IntPtr)m_DeviceHandle, ref l_Time, ref l_pSpectrum[0]))
+[3888] (03:04:29.295125)[ AVANTES . WndProc] ¢º AVS5216.AVS_GetSaturatedPixels((IntPtr)m_DeviceHandle, ref l_pSaturated[0]);
+[3888] (03:04:30.607625)[ AVANTES . btnStopMeasurement_Click] ¢º (int)AVS5216.AVS_StopMeasure((IntPtr)m_DeviceHandle);
+[3888] (03:04:57.076375)[ AVANTES . btnDeactivate_Click] ¢º AVS5216.AVS_Deactivate((IntPtr)m_DeviceHandle);
+[3888] (03:04:58.842000)[ AVANTES . btnUpdateList_Click] ¢º AVS5216.AVS_GetNrOfDevices();
+[3888] (03:04:58.842000)[ AVANTES . btnUpdateList_Click] ¢º AVS5216.AVS_GetList(l_Size, ref l_RequiredSize, ref l_Data[0]);
+[3888] (03:05:09.685750)[ AVANTES . Form1_Closed] ¢º AVS5216.AVS_Done();
+
+
+
+
+
+
+
+[2392] (04:02:23.154500)[ AVANTES . WndProc] ¢º 0x401
+[2392] (04:02:23.154500)[ AVANTES . WndProc] ¢º if (0 == (int)AVS5216.AVS_GetLambda((IntPtr)m_DeviceHandle, ref m_Lambda[0]))
+[2392] (04:02:23.154500)[ AVANTES . WndProc] ¢º if (AVS5216.ERR_SUCCESS == (int)AVS5216.AVS_GetScopeData((IntPtr)m_DeviceHandle, ref l_Time, ref l_pSpectrum[0]))
+[2392] (04:02:23.154500)[ AVANTES . WndProc] ¢º AVS5216.AVS_GetSaturatedPixels((IntPtr)m_DeviceHandle, ref l_pSaturated[0]);

@@ -1,0 +1,136 @@
+﻿using System;
+using System.Threading;
+using System.ComponentModel;
+
+namespace CH.IO.Comm
+{
+    class CHThread
+    {
+        public delegate void DoWork(Exception e);
+        public delegate void FinishWork(Exception e);
+
+        public event DoWork doWork = null;
+        public event FinishWork finishWork = null;
+
+        private Thread m_worker = null;
+        private ManualResetEvent m_evLoop = null;
+        private ManualResetEvent m_evFinished = null;
+        private bool m_continue = false;
+        private int m_delay = 20;
+
+        public int Delay
+        {
+            get { return m_delay; }
+            set { m_delay = value; }
+        }
+
+        public CHThread()
+        {
+        }
+
+        public int Open()
+        {
+            try
+            {
+                m_evLoop = new ManualResetEvent(false);
+                m_evFinished = new ManualResetEvent(false);
+
+                m_worker = new Thread(new ThreadStart(Working));
+                m_worker.IsBackground = true;
+                m_worker.Start();
+
+                return 1;
+            }
+            catch
+            {
+                return 0;
+            }
+        }
+
+        public int Close()
+        {
+            try
+            {
+                m_continue = false;
+                m_evLoop.Set();
+                m_evFinished.WaitOne();
+
+                m_evLoop.Close();
+                m_evFinished.Close();
+            }            
+            finally
+            {
+                m_worker = null;
+            }
+            return 1;
+        }
+
+        public int Start()
+        {
+            try
+            {
+                m_evLoop.Set();
+
+                return 1;
+            }
+            catch
+            {
+                return 0;
+            }
+        }
+
+        public int Wait(int time)
+        {
+            try
+            {
+                m_evLoop.Reset();
+                if(time != 0)
+                {
+                    Thread.Sleep(time);
+                    m_evLoop.Set();
+                }
+                return 1;
+            }
+            catch
+            {
+                return 0;
+            }
+        }
+
+        private void Working()
+        {
+            m_continue = true;
+            
+            while (m_continue) // doWork //
+            {
+                Thread.Sleep(m_delay);
+
+                m_evLoop.WaitOne();
+
+                try
+                {
+                    if(doWork != null) 
+                        doWork(null);
+                }
+                catch(Exception ex)
+                {
+                    if (doWork != null) 
+                        doWork(ex);
+                }
+            } // while //
+
+            try
+            {
+                if(finishWork != null) 
+                    finishWork(null);
+            }
+            catch(Exception ex)
+            {
+                if(finishWork != null) 
+                    finishWork(ex);
+            }
+
+            m_evFinished.Set();
+        }
+    }
+}

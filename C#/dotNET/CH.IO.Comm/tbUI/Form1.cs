@@ -1,0 +1,137 @@
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Windows.Forms;
+
+using CH.IO.Comm;
+
+namespace tbUI
+{
+    public partial class Form1 : Form
+    {
+        tbComm comm = null;
+
+        public Form1()
+        {
+            InitializeComponent();
+        }
+
+        private void Form1_Load(object sender, EventArgs e)
+        {
+            try
+            {
+                comm = new tbComm();
+
+                comm.OnMsg +=new DEVICE.MsgEventHandler(comm_OnMsg);
+                comm.OnError +=new DEVICE.ErrorEventHandler(comm_OnError);
+
+                tbComm.CONFIG config = new tbComm.CONFIG();
+
+                tbComm.HANDLE handle = new tbComm.HANDLE();
+                tbComm.Mount(handle);
+                int[] ID;
+                tbComm.GetDeviceID(out ID);                
+
+                comm.Open(config);
+
+                comm.UniqueMethodForTest();
+
+                DEVICE dev = comm; // for Interface
+
+            }
+            catch (System.Exception ex)
+            {
+
+            }
+
+        }
+
+        void comm_OnError(object sender, string source, Exception error)
+        {
+            try
+            {
+                switch (error.Message)
+                {
+                    case "DISCONNECT":
+                        {
+
+                        }
+                        break;
+                    case "NO RESPONSE AT ALL":
+                        {
+
+                        }
+                        break;
+                }
+            }
+            catch (System.Exception ex)
+            {
+
+            }
+        }
+
+        void comm_OnMsg(object sender, string type, object msg)
+        {
+            try
+            {
+                switch (type)
+                {
+                    case "string":
+                        {
+                            string strTest = (string)msg;
+                        }
+                        break;
+                    case "byte[]":
+                        {
+                            byte[] arTest = new byte[comm.ByteToRead];
+                            comm.Read(arTest, 0, arTest.Length);
+                        }
+                        break;
+                }
+            }
+            catch (System.Exception ex)
+            {
+
+            }
+        }
+
+        private void Form1_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            try
+            {
+                if (null != comm)
+                {
+                    comm.Close();
+                    comm = null;
+                }
+            }
+            catch (System.Exception ex)
+            {
+                //comm_OnError()
+            }
+        }
+
+
+
+        private void btWrite_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                if (null != comm)
+                {
+                    comm.Write(0xff);
+                }
+            }
+            catch (System.Exception ex)
+            {
+
+            }
+        }
+
+
+    }
+}

@@ -1,0 +1,73 @@
+﻿namespace tbIPC_Server
+{
+    partial class Server
+    {
+        /// <summary>
+        /// Required designer variable.
+        /// </summary>
+        private System.ComponentModel.IContainer components = null;
+
+        /// <summary>
+        /// Clean up any resources being used.
+        /// </summary>
+        /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing && (components != null))
+            {
+                components.Dispose();
+            }
+            base.Dispose(disposing);
+        }
+
+        #region Windows Form Designer generated code
+
+        /// <summary>
+        /// Required method for Designer support - do not modify
+        /// the contents of this method with the code editor.
+        /// </summary>
+        private void InitializeComponent()
+        {
+            this.tbMsg = new System.Windows.Forms.TextBox();
+            this.UIWorker = new System.ComponentModel.BackgroundWorker();
+            this.SuspendLayout();
+            // 
+            // tbMsg
+            // 
+            this.tbMsg.Location = new System.Drawing.Point(12, 12);
+            this.tbMsg.Name = "tbMsg";
+            this.tbMsg.Size = new System.Drawing.Size(437, 21);
+            this.tbMsg.TabIndex = 0;
+            // 
+            // UIWorker
+            // 
+            this.UIWorker.WorkerReportsProgress = true;
+            this.UIWorker.WorkerSupportsCancellation = true;
+            this.UIWorker.DoWork += new System.ComponentModel.DoWorkEventHandler(this.UIWorker_DoWork);
+            this.UIWorker.ProgressChanged += new System.ComponentModel.ProgressChangedEventHandler(this.UIWorker_ProgressChanged);
+            // 
+            // Server
+            // 
+            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.ClientSize = new System.Drawing.Size(461, 375);
+            this.Controls.Add(this.tbMsg);
+            this.Font = new System.Drawing.Font("Arial", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
+            this.Name = "Server";
+            this.RightToLeftLayout = true;
+            this.Text = "IPC Server";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Server_FormClosing);
+            this.Load += new System.EventHandler(this.Server_Load);
+            this.ResumeLayout(false);
+            this.PerformLayout();
+
+        }
+
+        #endregion
+
+        private System.Windows.Forms.TextBox tbMsg;
+        private System.ComponentModel.BackgroundWorker UIWorker;
+    }
+}
+

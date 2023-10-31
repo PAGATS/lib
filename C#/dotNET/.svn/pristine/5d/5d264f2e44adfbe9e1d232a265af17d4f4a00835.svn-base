@@ -1,0 +1,29 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+
+namespace CH.IO.Comm
+{
+    abstract public class Device
+    {        
+        abstract public void Open(object config);
+
+        abstract public int Read(byte datum);
+        abstract public int Read(byte[] buffer, int offset, int count);
+
+        abstract public int Write(byte datum);
+        abstract public int Write(byte[] buffer, int offset, int count);
+
+        abstract public void Close();
+
+        public delegate void RxDataEventHandler(object sender, object data, Type type);
+        abstract public event RxDataEventHandler OnRxData;
+
+        public delegate void MsgEventHandler(object sender, object msg, Type type);
+        abstract public event MsgEventHandler OnMsg;
+
+        public delegate void ErrorEventHandler(object sender, string source, Exception error);
+        abstract public event ErrorEventHandler OnError;
+    }
+}

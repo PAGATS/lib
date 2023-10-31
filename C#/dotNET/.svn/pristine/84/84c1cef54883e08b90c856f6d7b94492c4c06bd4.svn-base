@@ -1,0 +1,549 @@
+﻿using System;
+using System.Net;
+using System.Net.Sockets;
+using System.Threading;
+using System.Diagnostics;
+using System.ComponentModel;
+
+namespace CH.IO.Comm
+{
+    class Sock
+    {
+        /*
+        *****************************************************************
+        * Delegate and Event
+        *****************************************************************
+        */
+        public delegate void OnEvents(EventList ev, object message);
+        public OnEvents onEvents = null;
+
+        public enum EventList
+        {
+            Connected = 1,
+            Disconnected = 2,
+            AbDisconnected = 3,
+            DataReceived = 4,
+            Error = 5
+        }
+
+        public enum SockState
+        {
+            None = 0,
+            Dormant = 1,
+            Listening = 2,
+            Receiving = 3,
+            Disconnected = 4,
+            AbDisconnected = 5,
+            Closed = 6
+        }
+
+        public enum IOCtrlOption
+        {
+            Listen = 1,
+            Connect = 2,
+            Disconnect = 3
+        }
+
+        /*
+        *****************************************************************
+        * Socket Configuration
+        *****************************************************************
+        */
+        public class SockConfig
+        {
+            public int txTimeout = 300;
+            public int rxTimeout = 300;
+        }
+
+        /*
+        *****************************************************************
+        * Member variables
+        *****************************************************************
+        */
+        private Socket m_sock = null;
+        private Socket m_listenSock = null;
+        private SockConfig m_config;
+
+        private bool m_bContinue = false;
+        private BackgroundWorker m_thOperating = null;
+        private ManualResetEvent m_evOperating = null;
+        private ManualResetEvent m_evClosing = null;
+
+        private SockState m_state = SockState.None;
+
+        private CQ m_rxQ = new CQ(64 * 1024);
+
+        private EventList m_evType;
+        private object m_evMsg;
+
+        /*
+        *****************************************************************
+        * Properties
+        *****************************************************************
+        */
+        public SockState State
+        {
+            get { return m_state; }
+        }
+
+        public int ByteToRead
+        {
+            get { return m_rxQ.Count; }
+        }
+
+        /*
+        *****************************************************************
+        * Constructor
+        *****************************************************************
+        */
+        public Sock()
+        {
+        }
+
+        /*
+        *****************************************************************
+        * Interfaces
+        *****************************************************************
+        */
+        public int Open(SockConfig config)
+        {
+            try
+            {
+                if (config == null)
+                    m_config = new SockConfig();
+                else
+                    m_config = config;
+
+                this.Close();
+
+                m_state = SockState.Dormant;
+            
+                m_evOperating = new ManualResetEvent(false);
+                m_evClosing = new ManualResetEvent(false);
+
+                m_thOperating = new BackgroundWorker();
+                m_thOperating.DoWork += new DoWorkEventHandler(Work_Operating);
+                m_thOperating.ProgressChanged +=
+                    new ProgressChangedEventHandler(ProgressChanged_Operating);
+                m_thOperating.WorkerReportsProgress = true;
+            
+                m_thOperating.RunWorkerAsync();
+
+                return 0;
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public int Close()
+        {
+            try
+            {
+                //
+                // 쓰레드가 휴지상태에서 대기하고 있는 경우
+                if (m_state == SockState.Dormant)
+                {
+                    m_bContinue = false;
+                    m_evOperating.Set();
+                }
+                else
+                {
+                    m_state = SockState.Closed;
+                }
+                
+                this.Disconnect();
+
+                if (m_evClosing != null)
+                {
+                    m_evClosing.WaitOne();
+                }
+                return 0;
+            }
+            catch
+            {
+                throw;
+            }
+            finally
+            {
+                if (m_evOperating != null)
+                {
+                    m_evOperating.Close();
+                    m_evOperating = null;
+                }
+                if (m_evClosing != null)
+                {
+                    m_evClosing.Close();
+                    m_evClosing = null;
+                }
+            }
+        }
+
+        public int Write(byte[] data, int offset, int size)
+        {
+            try
+            {
+                return m_sock.Send(data, offset, size, SocketFlags.None);
+            }
+            catch (SocketException)
+            {
+                throw;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        public int Read(byte[] data, int offset, int size)
+        {
+            try
+            {
+                return m_rxQ.Dequeue(data, offset, size);
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public int IOCtrl(IOCtrlOption opt, string ip, int port)
+        {
+            try
+            {
+                switch (opt)
+                {
+                    case IOCtrlOption.Listen: // listening
+                        if (m_state == SockState.None ||
+                            m_state == SockState.Dormant)
+                        {
+                            return Listen(port);
+                        }
+                        else
+                        {
+                            return -1;
+                        }
+
+                    case IOCtrlOption.Connect: // connect
+                        if (m_state == SockState.None ||
+                            m_state == SockState.Dormant)
+                        {
+                            return Connect(ip, port);
+                        }
+                        else
+                        {
+                            return -1;
+                        }
+
+                    case IOCtrlOption.Disconnect: // disconnect
+                        if (m_state == SockState.Listening ||
+                            m_state == SockState.Receiving)
+                        {
+                            return Disconnect();
+                        }
+                        else
+                        {
+                            return -1;
+                        }
+
+                    default: return -1;
+                }
+            }
+            catch (SocketException)
+            {
+                throw;
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        /*
+        *****************************************************************
+        * Thread
+        *****************************************************************
+        */
+        private void Work_Operating(object sender, EventArgs e)
+        {
+            int rx_size;
+            bool bNormal = true;
+            byte[] rxBuf = new byte[64 * 1024];
+
+            m_bContinue = true;
+
+            while (m_bContinue == true)
+            {
+                m_evOperating.WaitOne();
+
+                bNormal = false;
+
+                switch (m_state)
+                {
+                    case SockState.Dormant: // dormant state ///////////////////
+                        m_evOperating.Reset();
+                        break;
+
+                    case SockState.Listening: // listening state ///////////////
+                        try
+                        {
+                            m_sock = m_listenSock.Accept();
+                            //
+                            // set property        
+                            m_sock.SendTimeout = m_config.txTimeout;
+                            m_sock.ReceiveTimeout = m_config.rxTimeout;
+                            //
+                            // Notify to accept
+                            m_listenSock.Close(100);
+
+                            m_state = SockState.Receiving; // state 전환
+
+                            m_evType = EventList.Connected;
+                            m_evMsg = null;
+                            m_thOperating.ReportProgress(1);
+                            //onEvents(EventList.Connected, null);
+                        }
+                        catch (SocketException sex)
+                        {
+                            switch (sex.ErrorCode)
+                            {
+                                case 10004: // interrupted
+                                    if (m_state == SockState.Closed ||
+                                        m_state == SockState.Disconnected)
+                                    {
+                                        bNormal = true;
+                                    }
+                                    break;
+                            }
+                            if (!bNormal)
+                            {
+                                m_state = SockState.AbDisconnected;
+
+                                m_evType = EventList.Error;
+                                m_evMsg = sex;
+                                m_thOperating.ReportProgress(1);
+                                //onEvents(EventList.Error, sex);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            m_state = SockState.AbDisconnected;
+
+                            m_evType = EventList.Error;
+                            m_evMsg = ex;
+                            m_thOperating.ReportProgress(1);
+                            //onEvents(EventList.Error, ex);
+                        }
+                        break;
+
+                    case SockState.Receiving: // receiving state ///////////////
+                        try
+                        {
+                            rx_size = m_sock.Receive(
+                                rxBuf, 0, rxBuf.Length, SocketFlags.None);
+
+                            if (rx_size > 0)
+                            {
+                                if (m_rxQ.Enqueue(rxBuf, 0, rx_size) > 0)
+                                {
+                                    //onEvents(EventList.DataReceived, rx_size);
+                                    m_evType = EventList.DataReceived;
+                                    m_evMsg = rx_size;
+                                    m_thOperating.ReportProgress(1);
+                                }
+                                else
+                                {
+                                    //onEvents(EventList.Error, 
+                                    //     new Exception("Buffer overflow"));
+                                    m_evType = EventList.Error;
+                                    m_evMsg = new Exception("Buffer overflow");
+                                    m_thOperating.ReportProgress(1);
+                                }
+                            }
+                            else // 정상연결종료
+                            {
+                                m_state = SockState.Disconnected;
+                            }
+                        }
+                        catch (SocketException sex)
+                        {
+                            switch (sex.ErrorCode) 
+                            {
+                                case 10004: // interrupted
+                                    if (m_state == SockState.Closed ||
+                                        m_state == SockState.Disconnected) // 정상중지
+                                    {
+                                        bNormal = true;
+                                    }
+                                    break;
+
+                                default:
+                                    break;
+                            }
+                            if (!bNormal)
+                            {
+                                m_state = SockState.AbDisconnected;
+
+                                m_evType = EventList.Error;
+                                m_evMsg = sex;
+                                m_thOperating.ReportProgress(1);
+                            }
+                            //onEvents(EventList.Error, sex);
+                        }
+                        catch (Exception ex)
+                        {
+                            m_state = SockState.AbDisconnected;
+
+                            m_evType = EventList.Error;
+                            m_evMsg = ex;
+                            m_thOperating.ReportProgress(1);
+                            //onEvents(EventList.Error, ex);
+                        } 
+                        break;
+
+                    case SockState.Disconnected: // disconnected state /////////
+                        this.Disconnect();
+                        
+                        m_evType = EventList.Disconnected;
+                        m_evMsg = null;
+                        m_thOperating.ReportProgress(1);
+
+                        m_state = SockState.Dormant;
+                        //onEvents(EventList.Disconnected, null);
+                        break;
+
+                    case SockState.Closed:
+                        m_bContinue = false;
+                        this.Disconnect();
+
+                        m_evType = EventList.Disconnected;
+                        m_evMsg = null;
+                        m_thOperating.ReportProgress(1);
+                        break;
+
+                    case SockState.AbDisconnected: // abnormal disconnected ////
+                        m_bContinue = false;
+                        this.Disconnect();
+                        
+                        m_evType = EventList.AbDisconnected;
+                        //m_evMsg = null; // 이전 Exception 반환
+                        m_thOperating.ReportProgress(1);
+                        //onEvents(EventList.AbDisconnected, null);
+                        break;
+
+                    default:// not defined /////////////////////////////////
+                        break;
+                }
+            } // while //
+
+            m_evClosing.Set();
+        }
+
+        private void ProgressChanged_Operating(object sender, EventArgs e)
+        {
+            onEvents(m_evType, m_evMsg);
+        }
+
+        /*
+        *****************************************************************
+        * Utilities
+        *****************************************************************
+        */
+        private int Listen(int port)
+        {
+            try
+            {
+                // socket initialize
+                if (m_sock != null) m_sock.Close(1000);
+                m_sock = null;
+
+                m_listenSock = new Socket(
+                    AddressFamily.InterNetwork,
+                    SocketType.Stream,
+                    ProtocolType.Tcp);
+                m_listenSock.Bind(new IPEndPoint(IPAddress.Any, port));
+                m_listenSock.Listen(1);
+
+                m_state = SockState.Listening; // listening state                
+                m_evOperating.Set(); // 쓰레드동작시작                
+
+                return 0;
+            }
+            catch (SocketException sex)
+            {
+                return -1 * sex.ErrorCode;
+            }
+            catch (Exception)
+            {
+                return -1;
+            }
+        }
+
+        private int Connect(string ip, int port)
+        {
+            try
+            {
+                //
+                // socket initialize
+                if (m_sock != null) m_sock.Close();
+                m_sock = null;
+                //
+                // socket properties setting
+                m_sock = new Socket(
+                    AddressFamily.InterNetwork,
+                    SocketType.Stream,
+                    ProtocolType.Tcp);                
+                m_sock.SendTimeout = m_config.txTimeout;
+                m_sock.ReceiveTimeout = m_config.rxTimeout;
+
+                m_sock.Connect(new IPEndPoint(
+                    IPAddress.Parse(ip), port));
+
+                onEvents(EventList.Connected, "");
+                //
+                // receiving state
+                m_state = SockState.Receiving; 
+                m_evOperating.Set();
+
+                return 0;
+            }
+            catch (SocketException sex)
+            {
+                return -1 * sex.ErrorCode;
+            }
+            catch (Exception)
+            {
+                return -1;
+            }
+        }
+        
+        private int Disconnect()
+        {
+            try
+            {
+                if (m_listenSock != null)
+                {
+                    m_listenSock.Close();
+                    m_listenSock = null;
+                }
+                if (m_sock != null)
+                {
+                    m_sock.Shutdown(SocketShutdown.Both);
+                    m_sock.Close();
+                    m_sock = null;
+                }
+                return 0;
+            }
+            catch (SocketException sex)
+            {
+                return -1 * sex.ErrorCode;
+            }
+            catch (Exception)
+            {
+                return -1;
+            }
+        }  
+         
+    } // End of Class //
+}

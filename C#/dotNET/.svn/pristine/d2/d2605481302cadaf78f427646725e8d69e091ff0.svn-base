@@ -1,0 +1,247 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading;
+
+using CH.Data;
+using CH.Data.Parsing;
+using CH.IO.Comm;
+
+namespace CH.IO.Comm.Interface
+{
+    /*
+ * <A>58e5 
+ * <N>a90a
+ * 
+ * 
+ */
+
+    public class Talk
+    {
+        public class VARIABLES
+        {
+            public char STX;
+            public char ETX;
+            public DEVICE dev = null;
+            public ParserCRC16 parser = null;
+            public string strOldMsg = "";
+            public Queue<string> qMsg = null;
+
+            public bool bThWrite = false;
+            public Thread ThWrite = null;
+            public ManualResetEvent evThWrite = null;
+            public int nWriteTimeOut = 0;
+
+            public VARIABLES()
+            {
+                STX = '<';
+                ETX = '>';
+                parser = new ParserCRC16();
+                strOldMsg = "";
+                qMsg = new Queue<string>();
+                bThWrite = false;                
+                evThWrite = new ManualResetEvent(false);
+                nWriteTimeOut = 0;
+            }
+        }
+        
+        VARIABLES g_vb = null;
+
+        public delegate void DEVICE_TalkEventHandler(object sender, string msg);
+        public event DEVICE_TalkEventHandler OnRxMsg = null;
+
+        public Talk()
+        {
+            try
+            {
+                g_vb = new VARIABLES();
+                g_vb.dev.OnMsg +=new DEVICE.MsgEventHandler(dev_OnMsg);
+
+                g_vb.parser = new ParserCRC16('<', '>');
+                g_vb.parser.OnParsed += new ParserCRC16.PARSEREventHandler(parser_OnParsed);
+                g_vb.parser.OnCRC16Error += new ParserCRC16.CRC16ErrorEventHandler(parser_OnCRC16Error);
+
+                g_vb.bThWrite = true;
+                g_vb.ThWrite = new Thread(new ThreadStart(ThreadWrite));
+                g_vb.ThWrite.IsBackground = false;
+                g_vb.ThWrite.Start();
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public Talk(char STX, char ETX, int nWriteTimeOut)
+        {
+            try
+            {
+                g_vb = new VARIABLES();
+                g_vb.dev.OnMsg +=new DEVICE.MsgEventHandler(dev_OnMsg);
+                g_vb.dev.OnError += new DEVICE.ErrorEventHandler(dev_OnError);
+
+                g_vb.parser = new ParserCRC16(STX, ETX);
+                g_vb.parser.OnParsed += new ParserCRC16.PARSEREventHandler(parser_OnParsed);
+                g_vb.parser.OnCRC16Error += new ParserCRC16.CRC16ErrorEventHandler(parser_OnCRC16Error);
+
+                g_vb.nWriteTimeOut = nWriteTimeOut;
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        void dev_OnError(object sender, string source, Exception err)
+        {
+            //throw new NotImplementedException();
+        }
+
+        public void Connect(object device, object config)
+        {
+            try
+            {
+                g_vb.dev = (DEVICE)device;
+                g_vb.dev.Open(config);
+
+                g_vb.bThWrite = true;
+                g_vb.ThWrite = new Thread(new ThreadStart(ThreadWrite));
+                g_vb.ThWrite.Start();
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public void Disconnect()
+        {
+            try
+            {
+                g_vb.dev.Close();
+                g_vb.bThWrite = false;
+                g_vb.evThWrite.WaitOne(300);
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        void parser_OnCRC16Error(object sender)
+        {
+            try
+            {
+                // NAK
+                ACK("N");
+            }
+            catch{}            
+        }
+
+        void parser_OnParsed(object sender, string msg)
+        {
+            try
+            {
+                if ("N" == msg)
+                {
+                    // Rewriting when NAK is arrived                    
+                    Rewrite(g_vb.strOldMsg);
+                    return;
+                }
+                else
+                {   
+                    if("A" != msg)
+                    {
+                        // Data is arrived
+                        ACK("A");
+                        g_vb.evThWrite.Set();          
+                    }
+                    else
+                    {
+                        g_vb.evThWrite.Set();
+                        return;
+                    }
+                }
+
+                if (null != OnRxMsg)
+                    OnRxMsg(this, msg);
+            }
+            catch{}
+        }
+
+        void dev_OnMsg(object sender, string type, object msg)
+        {
+            try
+            {
+                byte[] pData = new byte[g_vb.dev.ByteToRead];
+                g_vb.dev.Read(pData, 0, pData.Length);
+                g_vb.parser.Parsing(pData, pData.Length);
+            }
+            catch { }
+        }
+
+        void dev_OnRxBytes(object sender, byte[] data, int count)
+        {
+            
+        }
+
+        void Rewrite(string msg)
+        {
+            try
+            {
+                byte[] pData = CH.Data.Convert.StringToAscii(msg);
+                g_vb.dev.Write(pData, 0, pData.Length);
+            }
+            catch {}            
+        }
+
+        void ACK(string msg)
+        {
+            string str = g_vb.STX + msg + g_vb.ETX + g_vb.parser.CRC16(msg);
+            byte[] pData = CH.Data.Convert.StringToAscii(str);
+            g_vb.dev.Write(pData, 0, pData.Length);
+        }
+
+        public void Write(string msg)
+        {
+            try
+            {
+                if(true == g_vb.dev.IsOpen)
+                {
+                    string str = g_vb.STX + msg + g_vb.ETX + g_vb.parser.CRC16(msg);
+                    g_vb.qMsg.Enqueue(str);
+                }
+                else
+                {
+                    throw new Exception("Port is not opened yet.");
+                }
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        void ThreadWrite()
+        {
+            while(true == g_vb.bThWrite)
+            {
+                try
+                {                    
+                    if(0 < g_vb.qMsg.Count)
+                    {
+                        g_vb.strOldMsg = g_vb.qMsg.Dequeue();
+                        byte[] pData = CH.Data.Convert.StringToAscii(g_vb.strOldMsg);
+                        g_vb.dev.Write(pData, 0, pData.Length);
+                        g_vb.evThWrite.WaitOne(g_vb.nWriteTimeOut); // Wait 300ms time out.
+                    }
+                    Thread.Sleep(100);
+                    g_vb.evThWrite.Reset();
+                }
+                catch{}
+            }
+            g_vb.evThWrite.Set();
+        }
+    }
+}

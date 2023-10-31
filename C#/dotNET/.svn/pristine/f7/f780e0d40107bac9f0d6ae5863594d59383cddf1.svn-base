@@ -1,0 +1,208 @@
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Windows.Forms;
+
+using Be.Windows.Forms;
+
+using CH.IO.Comm;
+using CH.XML;
+
+namespace tbUSART
+{
+    public partial class tbUSART : Form
+    {
+        public class VARIABLES
+        {
+            public int nPort = 0;
+            public int nBaud = 14;
+            public int nData = 3;
+            public int nStop = 0;
+            public int nParity = 2;
+            public int nHand = 0;
+        }
+
+        USART serial = null;
+        ComboBox[] pCombBoxes = new ComboBox[6];
+        VARIABLES g_vb;
+
+        public tbUSART()
+        {
+            InitializeComponent();
+        }
+
+        private void tbUSART_Load(object sender, EventArgs e)
+        {
+            try
+            {
+                g_vb = new VARIABLES();
+
+                pCombBoxes[0] = cbPort;
+                pCombBoxes[1] = cbBaud;
+                pCombBoxes[2] = cbDataBits;
+                pCombBoxes[3] = cbStop;
+                pCombBoxes[4] = cbParity;
+                pCombBoxes[5] = cbHand;
+
+                serial = new USART();
+                serial.OnMsg += new DEVICE.MsgEventHandler(serial_OnMsg);
+
+                cbPort.Items.AddRange(USART.GetPortNames());
+                cbBaud.Items.AddRange(USART.GetBaudRates());
+                cbDataBits.Items.AddRange(USART.GetDataBits());
+                cbStop.Items.AddRange(USART.GetStopBits());
+                cbParity.Items.AddRange(USART.GetParities());
+                cbHand.Items.AddRange(USART.GetHandShakes());
+
+                Registry.TryToRead<VARIABLES>(@".\tbUSART.Config.xml", ref g_vb);
+
+                cbBaud.SelectedIndex = g_vb.nBaud;
+                cbDataBits.SelectedIndex = g_vb.nData;
+                cbStop.SelectedIndex = g_vb.nStop;
+                cbParity.SelectedIndex = g_vb.nParity;
+                cbHand.SelectedIndex = g_vb.nHand;
+
+                hxEditRead.ByteProvider = new DynamicByteProvider(new List<Byte>(new byte[0]));
+                hxEditWrite.ByteProvider = new DynamicByteProvider(new List<Byte>(new byte[0]));
+            }
+            catch (System.Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+
+            try
+            {
+                cbPort.SelectedIndex = g_vb.nPort;
+            }
+            catch {}
+
+        }
+
+        void serial_OnMsg(object sender, Type type, object msg)
+        {
+            try
+            {
+                if (type == typeof(byte[]))
+                {
+                    byte[] pData = new byte[serial.ByteToRead];
+                    serial.Read(pData, 0, pData.Length);
+                    hxEditRead.ByteProvider.InsertBytes(hxEditRead.ByteProvider.Length, pData);
+                    hxEditRead.ScrollByteIntoView(hxEditRead.ByteProvider.Length);
+                    hxEditRead.Refresh();
+                }
+            }
+            catch (System.Exception ex)
+            {
+            	
+            }
+            
+        }
+
+        private void tbUSART_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            try
+            {
+                g_vb.nBaud = cbBaud.SelectedIndex;
+                g_vb.nData = cbDataBits.SelectedIndex;
+                g_vb.nStop = cbStop.SelectedIndex;
+                g_vb.nParity = cbParity.SelectedIndex;
+                g_vb.nHand = cbHand.SelectedIndex;
+                g_vb.nPort = cbPort.SelectedIndex;
+                Registry.Write<VARIABLES>(@".\tbUSART.Config.xml", g_vb);
+            }
+            catch (System.Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+        private void cbPort_MouseClick(object sender, MouseEventArgs e)
+        {
+            cbPort.Items.Clear();
+            cbPort.Items.AddRange(USART.GetPortNames());
+        }
+
+        void ComboBoxSetup(bool bEnable)
+        {
+            for (int i = 0; i < pCombBoxes.Length; i++)
+            {
+                pCombBoxes[i].Enabled = bEnable;
+            }
+        }
+
+        private void btOpen_Click(object sender, EventArgs e)
+        {
+            if ("Open" == btOpen.Text)
+            {
+                try
+                {
+                    USART.CONFIG config = new USART.CONFIG();
+                    config.PortName = (string)cbPort.Items[cbPort.SelectedIndex];
+                    config.BaudRate = (string)cbBaud.Items[cbBaud.SelectedIndex];
+                    config.DataBits = (string)cbDataBits.Items[cbDataBits.SelectedIndex];
+                    config.StopBits = (string)cbStop.Items[cbStop.SelectedIndex];
+                    config.Parity = (string)cbParity.Items[cbParity.SelectedIndex];
+                    config.Handshake = (string)cbHand.Items[cbHand.SelectedIndex];
+                    serial.Open(config);
+                    btOpen.Text = "Close";
+                    ComboBoxSetup(false);
+                }
+                catch (System.Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
+            }
+            else
+            {
+                try
+                {
+                    serial.Close();
+                    btOpen.Text = "Open";
+                    ComboBoxSetup(true);
+                }
+                catch (System.Exception ex)
+                {
+                    MessageBox.Show(ex.Message);
+                }
+            }
+        }
+
+        private void btSend_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                byte[] pData = new byte[hxEditWrite.ByteProvider.Length];
+                for (int i = 0; i < pData.Length; i++)
+                {
+                    pData[i] = hxEditWrite.ByteProvider.ReadByte(i);
+                }
+                serial.Write(pData, 0, pData.Length);
+            }
+            catch (System.Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+        private void chbPeriodic_CheckedChanged(object sender, EventArgs e)
+        {
+            tbPeriod.Enabled = !chbPeriodic.Checked;
+        }
+
+        private void btClearRx_Click(object sender, EventArgs e)
+        {
+            hxEditRead.ByteProvider.DeleteBytes(0, hxEditRead.ByteProvider.Length);
+            hxEditRead.Refresh();
+        }
+
+        private void tbClearTx_Click(object sender, EventArgs e)
+        {
+            hxEditWrite.ByteProvider.DeleteBytes(0, hxEditWrite.ByteProvider.Length);
+            hxEditWrite.Refresh();
+        }
+    }
+}

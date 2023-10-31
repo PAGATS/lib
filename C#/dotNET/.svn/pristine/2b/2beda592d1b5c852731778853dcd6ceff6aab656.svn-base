@@ -1,0 +1,220 @@
+﻿using System;
+using System.Runtime.InteropServices;
+
+namespace CH.IO.Comm
+{
+    public partial class AS5216 : DEVICE
+    {
+        // Extension for CH
+        override public event MsgEventHandler OnMsg = null;
+        override public event ErrorEventHandler OnError = null;
+
+        private class VARIABLE
+        {
+            public CONFIG config;
+            public AvsIdentityType IDType;
+            public IntPtr DeviceHandle;
+            public double[] pLambda;
+            public SCOPE_DATA ScopeData;
+            public byte[] pSaturated;
+            public MeasConfigType DefaultMeasConfigType;
+
+            public VARIABLE()
+            {
+                ScopeData = new SCOPE_DATA();
+            }
+        }
+        private VARIABLE g;
+
+        public class CONFIG : DEVICE.DEVICE_CONFIG
+        {
+            public AvsIdentityType IDType;
+            public MeasConfigType MeasurementType;
+        }
+
+        public AS5216()
+        {
+            try
+            {
+                if (IntPtr.Zero == s_ParentHandle)
+                {
+                    throw new Exception("Error AS5216 is not mounted");
+                }
+                g = new VARIABLE();
+                g.DeviceHandle = IntPtr.Zero;
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        private static IntPtr s_ParentHandle = IntPtr.Zero;
+        public static AvsIdentityType[] Mount(IntPtr ParentHandle)
+        {
+            try
+            {
+                AS5216.AVS_Done(); //Waiting long
+                int l_Port = AS5216.AVS_Init(0); //Waiting long
+
+                if (l_Port > 0)
+                {
+                    // USB Connection
+                    s_ParentHandle = ParentHandle;
+                    return GetAvsIdentity();
+                }
+                else
+                {
+                    AS5216.AVS_Done();
+                    l_Port = AS5216.AVS_Init(-1);   //try RS-232/bluetooth autodetect
+                    //an alternative and faster connection through
+                    //RS-232 can be done by specifying the
+                    //poortnr in the argument, e.g.
+                    //AVS_Init(2) if the device is connected to COM2
+
+                    if (l_Port > 0)
+                    {
+                        s_ParentHandle = ParentHandle;
+                        return GetAvsIdentity();
+                    }
+                    else
+                    {
+                        AS5216.AVS_Done();
+                        throw new Exception("Open communication failed");
+                    }
+                }
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public static void Unmount()
+        {
+            try
+            {
+                AS5216.AVS_Done();
+                s_ParentHandle = IntPtr.Zero;
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        override public int Open(DEVICE.DEVICE_CONFIG config)
+        {
+            try
+            {
+                Close();
+
+                g.config = (CONFIG)config;
+                g.IDType = g.config.IDType;
+                g.DeviceHandle = AS5216.AVS_Activate(ref g.IDType);
+
+                if (AS5216.INVALID_AVS_HANDLE_VALUE == (long)g.DeviceHandle)
+                {
+                    throw new Exception("Error opening device: " + g.IDType.SerialNumber);
+                }
+
+                PrepareMeasure(g.config.MeasurementType);
+
+                //AS5216.MeasConfigType MesType = GetDefaultMeasureConfigType;
+                //PrepareMeasure(MesType);
+                Measure(0);
+
+                return 0;
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        override public bool IsOpen
+        {
+            get
+            {
+                return (IntPtr.Zero == g.DeviceHandle) ? false : true;
+            }
+        }
+
+        override public int Close()
+        {
+            try
+            {
+                if (true == IsOpen)
+                {
+                    StopMeasurement();
+
+                    if (true == AS5216.AVS_Deactivate(g.DeviceHandle))
+                    {
+                        g.DeviceHandle = IntPtr.Zero;
+                    }
+                    else
+                    {
+                        throw new Exception("Error closing device: " + g.IDType.SerialNumber);
+                    }
+                }
+                return 0;
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        override public int Read(out byte datum)
+        {
+            throw new Exception("This method is not supported in this class");
+        }
+
+        override public int Read(byte[] buffer, int offset, int count)
+        {
+            throw new Exception("This method is not supported in this class");
+        }
+
+        override public int Write(byte datum)
+        {
+            throw new Exception("This method is not supported in this class");
+        }
+
+        override public int Write(byte[] buffer, int offset, int count)
+        {
+            throw new Exception("This method is not supported in this class");
+        }
+
+        override public object IOCtrl(string type, object cmd)
+        {
+            try
+            {
+                if("string" == type)
+                {
+
+                }
+                return 0;
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        override public int ByteToRead
+        {
+            get
+            {
+                try
+                {
+                    return 0;
+                }
+                catch
+                {
+                    throw;
+                }
+
+            }
+        }
+    }
+}

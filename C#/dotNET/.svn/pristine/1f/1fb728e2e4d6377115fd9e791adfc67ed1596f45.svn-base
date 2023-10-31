@@ -1,0 +1,75 @@
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Windows.Forms;
+
+using CH.System;
+
+namespace tbZygote
+{
+    public partial class tbZygote : Form
+    {
+        Zygote zygote = new Zygote();
+
+        public tbZygote()
+        {
+            InitializeComponent();
+        }
+
+        private void Zygote_Load(object sender, EventArgs e)
+        {
+
+        }
+
+        private void Zygote_FormClosing(object sender, FormClosingEventArgs e)
+        {
+
+        }
+
+        private void btOpen_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                if (DialogResult.OK == openFileDialog1.ShowDialog())
+                {
+                    Zygote.CONFIG config = new Zygote.CONFIG();
+                    config.ExePath = openFileDialog1.FileName;
+                    zygote.Open(config);
+                }
+            }
+            catch (System.Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+        private void btClose_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                zygote.Close();
+            }
+            catch (System.Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+        private void btWrite_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                //zygote.Write(textBox1.Text);
+                textBox1.Text = zygote.ProcessName;
+            }
+            catch (System.Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
+    }
+}

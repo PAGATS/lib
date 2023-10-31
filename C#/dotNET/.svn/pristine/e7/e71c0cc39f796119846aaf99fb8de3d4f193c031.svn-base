@@ -1,0 +1,90 @@
+; Installation inf for the Avantes Spectrometer AS5216
+;
+; (c) Copyright 2005 Avantes
+;
+
+[Version]
+Signature="$CHICAGO$"
+Class=Avantes Device
+ClassGUID={14C0FDB9-789B-4474-8F1A-5F2C049AD49D}
+Provider=%AVS%
+DriverPackageType = PlugAndPlay
+DriverPackageDisplayName = %DisplayName%
+DriverVer=11/11/2006, 1.0.0.1
+LayoutFile=layout.inf
+
+[SourceDisksNames]
+1 = %DiskId1%, AVSUSB2.tag,,\i386
+
+[SourceDisksFiles]
+AVSUSB2.sys = 1
+
+[ClassInstall32]
+AddReg = AVSDevicesAddReg
+
+[ClassInstall]
+AddReg = AVSDevicesAddReg
+
+[AVSDevicesAddReg]
+HKR,,,,%Classname%
+HKR,,Icon,,"-5"
+HKR,,NoInstallClass,,1
+
+[Manufacturer]
+%MfgName%=Avantes
+;manufacturer name = model section name
+
+[Avantes]
+;Device description = install_section_name, hw_id
+%USB\VID_0471&PID_0667.DeviceDesc%=AVSUSB2, USB\VID_0471&PID_0667
+%USB\VID_1992&PID_0667.DeviceDesc%=AVSUSB2, USB\VID_1992&PID_0667
+
+[PreCopySection]
+HKR,,NoSetupUI,,1
+
+[DestinationDirs]
+DefaultDestDir = 10,System32\Drivers
+AVSUSB2.Files.Ext = 10,System32\Drivers
+
+[AVSUSB2]
+CopyFiles=AVSUSB2.Files.Ext
+AddReg=AVSUSB2.AddReg
+DriverVer=11/11/2006, 1.0.0.1
+
+[AVSUSB2.NT]
+CopyFiles=AVSUSB2.Files.Ext
+AddReg=AVSUSB2.AddReg
+DriverVer=11/11/2006, 1.0.0.1
+
+[AVSUSB2.NT.Services]
+Addservice = AVSUSB2,0x00000002,AVSUSB2.AddService
+
+[AVSUSB2.AddService]
+DisplayName    = %AVSUSB2.SvcDesc%
+ServiceType    = 1                  ; SERVICE_KERNEL_DRIVER
+StartType      = 3                  ; SERVICE_DEMAND_START
+ErrorControl   = 1                  ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %10%\System32\Drivers\AVSUSB2.SYS
+LoadOrderGroup = Base
+
+[AVSUSB2.AddReg]
+HKR,,DevLoader,,*ntkern
+HKR,,NTMPDriver,,AVSUSB2.sys
+HKLM,"System\Currentcontrolset\Services\AVSUSB2\Parameters","MaximumTransferSize",0x10001,65535
+HKLM,"System\Currentcontrolset\Services\AVSUSB2\Parameters","DebugLevel",0x10001,0
+
+
+[AVSUSB2.Files.Ext]
+AVSUSB2.sys
+
+;---------------------------------------------------------------;
+
+[Strings]
+AVS="Avantes"
+Classname="Avantes Spectrometers"
+MfgName="Avantes"
+USB\VID_0471&PID_0667.DeviceDesc="AvaSpec-USB2"
+USB\VID_1992&PID_0667.DeviceDesc="AvaSpec-USB2"
+AVSUSB2.SvcDesc="AvaSpec-USB2 driver"
+DisplayName = "AvaSpec-USB2 driver"
+DiskId1 = "AVSUSB2 Installation disk"

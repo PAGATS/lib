@@ -1,0 +1,26 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CH.IO.Comm.CHSock", "CH.IO.Comm.CHSock\CH.IO.Comm.CHSock.csproj", "{AF2600AB-B22C-4E88-8617-39A28C71AD70}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CHTalk", "CHTalk\CHTalk.csproj", "{16FF17DE-6E4A-4A15-B2A9-ED728B9FAF56}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{AF2600AB-B22C-4E88-8617-39A28C71AD70}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AF2600AB-B22C-4E88-8617-39A28C71AD70}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AF2600AB-B22C-4E88-8617-39A28C71AD70}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AF2600AB-B22C-4E88-8617-39A28C71AD70}.Release|Any CPU.Build.0 = Release|Any CPU
+		{16FF17DE-6E4A-4A15-B2A9-ED728B9FAF56}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{16FF17DE-6E4A-4A15-B2A9-ED728B9FAF56}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{16FF17DE-6E4A-4A15-B2A9-ED728B9FAF56}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{16FF17DE-6E4A-4A15-B2A9-ED728B9FAF56}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

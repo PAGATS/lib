@@ -1,0 +1,242 @@
+﻿using System;
+using System.Threading;
+
+
+namespace CH.IO.Comm
+{
+    public class CHSock : DEVICE
+    {
+        public override event MsgEventHandler OnMsg = null;
+        public override event ErrorEventHandler OnError = null;
+
+        public class CONFIG : DEVICE_CONFIG
+        {
+            public bool receiver = true;        // 접속? / 리스닝?
+            public int txTimeout = 1000;        // 송신 타임아웃
+            public int rxTimeout = 0;        // 수신 타임아웃
+            public int txBufSize = 65535;       // 송신버퍼 크기
+            public int rxBufSize = 65535;       // 수신버퍼 크기
+            public int listeningPort = 5000;    // 리스닝포트
+            public string remoteIPAddress = 
+                "127.0.0.1";                    // 원격 아이피 주소
+            public int remotePort = 5000;       // 원격 포트번호
+        }
+
+        public static string[] Messages =
+        {
+            "CONNECTED", "DISCONNECTED", "READ"
+        };    
+
+        private CONFIG m_config = null;
+        private Sock m_sock = null;
+        private bool m_isOpen = false;
+
+        /*
+        ***********************************************************************
+        * Non-Blocking Call
+        ***********************************************************************
+        */
+        public override bool IsOpen
+        {
+            get { return m_isOpen; }
+        }
+
+        public override int ByteToRead
+        {
+            get { return m_sock.ByteToRead; }
+        }
+
+        /*
+        ***********************************************************************
+        * Blocking Call
+        ***********************************************************************
+        */        
+        public override int Open(DEVICE_CONFIG config)
+        {
+            try
+            {
+                Sock.SockConfig prop = null;
+                //
+                // socket property setting
+                //
+                m_config = (CONFIG)config;
+
+                prop = new Sock.SockConfig();
+                prop.rxTimeout = m_config.rxTimeout;
+                prop.txTimeout = m_config.txTimeout;
+                //
+                // socket 생성 및 Connect or Listening
+                //
+                if (m_sock != null)
+                {
+                    Close();
+                }
+                m_sock = new Sock();
+                m_sock.onEvents += new Sock.OnEvents(OnEvents_Handler);                
+                m_sock.Open(prop);
+                
+                m_isOpen = false;
+                if (m_config.receiver)
+                {
+                    if (m_sock.IOCtrl(
+                        Sock.IOCtrlOption.Listen, "",
+                        m_config.listeningPort) == 0)
+                    {
+                        m_isOpen = true;
+                    }
+                }
+                else
+                {
+                    if (m_sock.IOCtrl(
+                        Sock.IOCtrlOption.Connect,
+                        m_config.remoteIPAddress,
+                        m_config.remotePort) == 0)
+                    {
+                        m_isOpen = true;
+                    }
+                }
+
+                return (m_isOpen ? 0 : -1);
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public override int Close()
+        {
+            try
+            {
+                m_sock.Close();
+
+                m_sock = null;
+                m_isOpen = false;
+
+                return 1;
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public override int Read(byte[] buffer, int offset, int count)
+        {
+            try
+            {
+                return m_sock.Read(buffer, offset, count);
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public override int Read(out byte datum)
+        {
+            try
+            {
+                byte[] dt = new byte[1];
+                datum = 0;
+                if (m_sock.Read(dt, 0, 1) > 0)
+                {
+                    datum = dt[0];
+                    return 1;
+                }
+                else
+                {
+                    return 0;
+                }
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public override int Write(byte[] buffer, int offset, int size)
+        {
+            try
+            {
+                if (!m_isOpen) return -1;
+
+                return m_sock.Write(buffer, offset, size);
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public override int Write(byte datum)
+        {
+            try
+            {
+                if (!m_isOpen) return -1;
+
+                byte[] dt = new byte[1];
+                dt[0] = datum;
+                return m_sock.Write(dt, 0, 1);
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public override object IOCtrl(string type, object cmd)
+        {
+            return null;
+        }
+
+        //
+        // Event Handler: OnEvents
+        //
+        private void OnEvents_Handler(Sock.EventList ev, object msg)
+        {
+            try
+            {
+                switch (ev)
+                {
+                    case Sock.EventList.Connected:
+                        m_isOpen = true;
+                        OnMsg(this, Messages[0], null);
+                        break;
+
+                    case Sock.EventList.Disconnected:
+                        m_isOpen = false;
+                        OnMsg(this, Messages[1], null);
+                        break;
+
+                    case Sock.EventList.AbDisconnected:
+                        m_isOpen = false;
+                        OnMsg(this, Messages[1], msg);
+                        break;
+
+                    case Sock.EventList.DataReceived:
+                        OnMsg(this, Messages[2], null);
+                        break;
+
+                    case Sock.EventList.Error:
+                        OnError(this,
+                            "CHSock.OnEvents_Handler.Error",
+                            (Exception)msg);
+                        break;
+
+                    default: break;
+                }
+            }
+            catch (Exception e)
+            {
+                try
+                {
+                    OnError(this, "CHSock.OnEvents_Handler.Exception", e);
+                }
+                catch
+                {
+                }
+            }
+        }
+    } // End of Class //
+}

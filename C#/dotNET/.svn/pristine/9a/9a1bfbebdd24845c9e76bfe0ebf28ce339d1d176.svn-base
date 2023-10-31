@@ -1,0 +1,494 @@
+﻿using System;
+using System.Runtime.InteropServices;
+
+namespace CH.IO.Comm
+{
+    public partial class AS5216 : DEVICE
+    {
+        public const int WM_USER = 0x400;
+        public const int WM_MEAS_READY = WM_USER + 1;
+        public const int WM_DBG_INFOAs = WM_USER + 2;
+        public const int WM_DEVICE_RESET = WM_USER + 3;
+        
+        private static AvsIdentityType[] GetAvsIdentity()
+        {
+            uint l_Size = 0;
+            uint l_RequiredSize = 0;
+            int l_NrDevices = 0;
+
+            l_NrDevices = AS5216.AVS_GetNrOfDevices(); // Waiting long
+
+            AS5216.AvsIdentityType[] l_Id = new AS5216.AvsIdentityType[l_NrDevices];
+            l_RequiredSize = ((uint)l_NrDevices) * (uint)Marshal.SizeOf(typeof(AS5216.AvsIdentityType)); //Marshal.SizeOf(typeof(PackedRecNative));
+            byte[] l_Data = new byte[l_RequiredSize];
+
+            if (l_RequiredSize > 0)
+            {
+                l_Size = l_RequiredSize;
+                l_NrDevices = AS5216.AVS_GetList(l_Size, ref l_RequiredSize, ref l_Data[0]);//ref l_Data[0]);
+
+                IntPtr aBuffer = Marshal.AllocHGlobal((int)l_Size);
+
+                try
+                {
+                    for (int i = 0; i < l_NrDevices; i++)
+                    {
+                        Marshal.Copy(l_Data, (i * (int)Marshal.SizeOf(typeof(AS5216.AvsIdentityType))), aBuffer, (int)Marshal.SizeOf(typeof(AS5216.AvsIdentityType)));
+                        l_Id[i] = (AS5216.AvsIdentityType)Marshal.PtrToStructure(aBuffer, typeof(AS5216.AvsIdentityType));
+                    }
+                    return l_Id;
+                }
+                finally
+                {
+                    Marshal.FreeHGlobal(aBuffer);
+                }
+            }
+            else
+            {
+                throw new Exception("AS5216 is not found in USB communication.");
+            }
+        }
+
+        public class VERSION_INFO
+        {
+            public string FPGA_Ver;
+            public string AS5216_Ver;
+            public string DLL_Ver;
+        }
+
+        public VERSION_INFO GetVersionInfo
+        {
+            get
+            {
+                try
+                {
+                    if (IsOpen)
+                    {
+                        VERSION_INFO info = new VERSION_INFO();
+
+                        byte[] a_Fpga = new byte[16];
+                        byte[] a_As5216 = new byte[16];
+                        byte[] a_Dll = new byte[16];
+
+                        int l_Res = (int)AS5216.AVS_GetVersionInfo(g.DeviceHandle, ref a_Fpga[0], ref a_As5216[0], ref a_Dll[0]);
+
+                        System.Text.ASCIIEncoding enc = new System.Text.ASCIIEncoding();
+
+                        if (AS5216.ERR_SUCCESS == l_Res)
+                        {
+                            info.FPGA_Ver = enc.GetString(a_Fpga);
+                            info.AS5216_Ver = enc.GetString(a_As5216);
+                            info.DLL_Ver = enc.GetString(a_Dll);
+                            return info;
+                        }
+                        else
+                        {
+                            throw new Exception("Error Getting Version Information: " + g.IDType.SerialNumber);
+                        }
+                    }
+                    else
+                        throw new Exception("Error Device is not opened: " + g.IDType.SerialNumber);
+                }
+                catch
+                {
+                    throw;
+                }
+            }
+        }
+
+        public ushort GetNumPixels
+        {
+            get
+            {
+                try
+                {
+                    if (IsOpen)
+                    {
+                        ushort NrPixels = 0;
+                        if (AS5216.ERR_SUCCESS == (int)AS5216.AVS_GetNumPixels(g.DeviceHandle, ref NrPixels))
+                        {
+                            return NrPixels;
+                        }
+                        else
+                        {
+                            throw new Exception("Error Getting number of Pixels: " + g.IDType.SerialNumber);
+                        }
+                    }
+                    else
+                        throw new Exception("Error Device is not opened: " + g.IDType.SerialNumber);
+                }
+                catch
+                {
+                    throw;
+                }
+            }
+        }
+
+        public DeviceConfigType GetParameter
+        {
+            get
+            {
+                IntPtr aBuffer = IntPtr.Zero;
+                try
+                {
+                    if (IsOpen)
+                    {
+                        int l_Res = 0;
+                        uint l_Size = 0;
+
+                        l_Size = (uint)Marshal.SizeOf(typeof(AS5216.DeviceConfigType));
+                        byte[] l_Data = new byte[l_Size];
+
+                        l_Res = (int)AS5216.AVS_GetParameter(g.DeviceHandle, l_Size, ref l_Size, ref l_Data[0]);//l_pDeviceData[0]);
+
+                        if (l_Res == AS5216.ERR_INVALID_SIZE)
+                        {
+                            l_Data = null;
+                            l_Data = new byte[l_Size];
+                            l_Res = (int)AS5216.AVS_GetParameter(g.DeviceHandle, l_Size, ref l_Size, ref l_Data[0]);//l_pDeviceData[0]);
+                        }
+
+                        aBuffer = Marshal.AllocHGlobal((int)l_Size);
+
+                        Marshal.Copy(l_Data, 0, aBuffer, (int)l_Size);
+                        return (AS5216.DeviceConfigType)Marshal.PtrToStructure(aBuffer, typeof(AS5216.DeviceConfigType));
+                    }
+                    else
+                        throw new Exception("Error Device is not opened: " + g.IDType.SerialNumber);
+                }
+                catch
+                {
+                    throw;
+                }
+                finally
+                {
+                    if (IntPtr.Zero != aBuffer)
+                    {
+                        Marshal.FreeHGlobal(aBuffer);
+                    }
+                }
+            }
+        }
+
+        public DeviceConfigType SetParameter
+        {
+            set
+            {
+                try
+                {
+                    int l_Res = (int)AS5216.AVS_SetParameter(g.DeviceHandle, ref value);//ref l_Data[0]);//
+                    if (AS5216.ERR_SUCCESS != l_Res)
+                    {
+                        throw new Exception("AVS_SetParameter, code: " + l_Res.ToString());
+                    }
+                }
+                catch
+                {
+                    throw;
+                }
+            }
+        }
+
+        public MeasConfigType GetDefaultMeasureConfigType
+        {
+            get
+            {
+                try
+                {
+                    g.DefaultMeasConfigType.StartPixel = 0;
+                    g.DefaultMeasConfigType.StopPixel = (ushort)(GetNumPixels - 1); // 2047
+                    g.DefaultMeasConfigType.IntegrationTime = 30.0F; // 100 ms
+                    double l_NanoSec = -20.83; // 0 ns Integration Delay
+                    uint l_FPGAClkCycles = (uint)(6.0 * (l_NanoSec + 20.84) / 125.0);
+                    g.DefaultMeasConfigType.IntegrationDelay = l_FPGAClkCycles;
+                    g.DefaultMeasConfigType.NrAverages = 1;
+                    g.DefaultMeasConfigType.Trigger.Mode = 0; // H/W:0, S/W:1
+                    g.DefaultMeasConfigType.Trigger.Source = 0; // External:0, Synchronized:1
+                    g.DefaultMeasConfigType.Trigger.SourceType = 0; // Edge:0, Level:1
+                    g.DefaultMeasConfigType.SaturationDetection = 0;
+                    g.DefaultMeasConfigType.CorDynDark.Enable = 1; // Enable
+                    g.DefaultMeasConfigType.CorDynDark.ForgetPercentage = 0; // 0 %
+                    g.DefaultMeasConfigType.Smoothing.SmoothPix = 1;
+                    g.DefaultMeasConfigType.Smoothing.SmoothModel = 0;
+                    g.DefaultMeasConfigType.Control.StrobeControl = 0;
+                    l_NanoSec = 0.0; // 0 ns Laser Delay (double)
+                    l_FPGAClkCycles = (uint)(6.0 * l_NanoSec / 125.0);
+                    g.DefaultMeasConfigType.Control.LaserDelay = l_FPGAClkCycles;
+                    l_NanoSec = 0.0; // 0 ns Laser Width (double)
+                    l_FPGAClkCycles = (uint)(6.0 * l_NanoSec / 125.0);                    
+                    g.DefaultMeasConfigType.Control.LaserWidth = l_FPGAClkCycles;
+                    g.DefaultMeasConfigType.Control.LaserWaveLength = (float)0.0;
+                    g.DefaultMeasConfigType.Control.StoreToRam = 0;
+                    return g.DefaultMeasConfigType;
+                }
+                catch
+                {
+                    throw;
+                }
+            }
+        }
+
+        public bool MasterSetSyncMode
+        {
+            set
+            {
+                try
+                {
+                    int l_Res = (int)AS5216.AVS_SetSyncMode(g.DeviceHandle, value);
+                    if(AS5216.ERR_SUCCESS != l_Res)
+                    {
+                        switch(l_Res)
+                        {
+                            case AS5216.ERR_DEVICE_NOT_FOUND:
+                                {
+                                    throw new Exception("Error Setting SyncMode Device Not Found: " + g.IDType.SerialNumber);
+                                }
+                            case AS5216.ERR_INVALID_DEVICE_ID:
+                                {
+                                    throw new Exception("Error Setting SyncMode Invalid Device ID: " + g.IDType.SerialNumber);
+                                }
+                        }
+                    }
+                }
+                catch
+                {
+                    throw;
+                }
+            }
+        }
+
+        public void PrepareMeasure(MeasConfigType PrepareMeasData)
+        {
+            try
+            {
+                if (IsOpen)
+                {
+                    int l_Res = (int)AS5216.AVS_PrepareMeasure(g.DeviceHandle, ref PrepareMeasData);
+                    if (AS5216.ERR_SUCCESS != l_Res)
+                    {
+                        throw new Exception("Error Preparing to measure: " + g.IDType.SerialNumber);
+                    }
+                }
+                else
+                    throw new Exception("Error Device is not opened: " + g.IDType.SerialNumber);
+
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public void Measure(short ScanCount)
+        {
+            try
+            {
+                if (IsOpen)
+                {
+                    int l_Res = (int)AS5216.AVS_Measure(g.DeviceHandle, s_ParentHandle, ScanCount);
+                    if (AS5216.ERR_SUCCESS != l_Res)
+                    {
+                        switch (l_Res)
+                        {
+                            case AS5216.ERR_INVALID_PARAMETER:
+                                throw new Exception("Measuring Status: invalid parameter");
+                            default:
+                                throw new Exception(string.Format("Measuring Status: start failed, code: " + l_Res.ToString()));
+                        }
+                    }
+                }
+                else
+                    throw new Exception("Error Device is not opened: " + g.IDType.SerialNumber);
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public void StopMeasurement()
+        {
+            try
+            {
+                if (IsOpen)
+                {
+                    int l_Res = (int)AS5216.AVS_StopMeasure(g.DeviceHandle);
+                    if (AS5216.ERR_SUCCESS != l_Res)
+                    {
+                        throw new Exception("Error Stopping Measurement: " + l_Res.ToString());
+                    }
+                }
+                else
+                    throw new Exception("Error Device is not opened: " + g.IDType.SerialNumber);
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public double[] GetLambda
+        {
+            get
+            {
+                try
+                {
+                    if (IsOpen)
+                    {
+                        g.pLambda = new double[GetNumPixels];
+
+                        if (AS5216.ERR_SUCCESS == (int)AS5216.AVS_GetLambda(g.DeviceHandle, ref g.pLambda[0]))
+                        {
+                            return g.pLambda;
+                        }
+                        else
+                        {
+                            throw new Exception("Error Getting Lambda: " + g.IDType.SerialNumber);
+                        }
+                    }
+                    else
+                        throw new Exception("Error Device is not opened: " + g.IDType.SerialNumber);
+                }
+                catch
+                {
+                    throw;
+                }
+            }
+        }
+
+        public bool IsDataAvailable
+        {
+            get
+            {
+                try
+                {
+                    if (IsOpen)
+                    {
+                        switch (AS5216.AVS_PollScan(g.DeviceHandle))
+                        {
+                            case 0:
+                                return false;
+                            case 1:
+                                return true;
+                            case ERR_DEVICE_NOT_FOUND:
+                                {
+                                    throw new Exception("Error Device is not found: " + g.IDType.SerialNumber);
+                                }
+                            case ERR_INVALID_DEVICE_ID:
+                                {
+                                    throw new Exception("Error Invalid Device ID: " + g.IDType.SerialNumber);
+                                }
+                            default:
+                                {
+                                    throw new Exception("Error undefined: " + g.IDType.SerialNumber);
+                                }
+                        }
+                    }
+                    else
+                        throw new Exception("Error Device is not opened: " + g.IDType.SerialNumber);
+                }
+                catch
+                {
+                    throw;
+                }
+            }
+        }
+
+        public class SCOPE_DATA
+        {
+            public double[] pSpectrum;
+            public uint nOldTimeLabel_us;
+            public uint nTImeLabel_us;
+        }
+
+        public SCOPE_DATA GetScopeData
+        {
+            get
+            {
+                try
+                {
+                    if (IsOpen)
+                    {
+                        g.ScopeData.pSpectrum = new double[GetNumPixels];
+
+                        if (AS5216.ERR_SUCCESS == (int)AS5216.AVS_GetScopeData(g.DeviceHandle, ref g.ScopeData.nTImeLabel_us, ref g.ScopeData.pSpectrum[0]))
+                        {
+                            g.ScopeData.nOldTimeLabel_us = g.ScopeData.nTImeLabel_us;
+                            return g.ScopeData;
+                        }
+                        else
+                        {
+                            throw new Exception("Error Getting Scope Data: " + g.IDType.SerialNumber);
+                        }
+                    }
+                    else
+                        throw new Exception("Error Device is not opened: " + g.IDType.SerialNumber);
+                }
+                catch
+                {
+                    throw;
+                }
+            }
+        }
+
+        public byte[] GetSaturatedPixels
+        {
+            get
+            {
+                try
+                {
+                    if (IsOpen)
+                    {
+                        g.pSaturated = new byte[GetNumPixels];
+                        AS5216.AVS_GetSaturatedPixels(g.DeviceHandle, ref g.pSaturated[0]);
+                        return g.pSaturated;
+                    }
+                    else
+                        throw new Exception("Error Device is not opened: " + g.IDType.SerialNumber);
+                }
+                catch
+                {
+                    throw;
+                }
+            }
+
+        }
+
+        public string GetSensorType
+        {
+            get
+            {
+                try
+                {
+                    switch (GetParameter.Detector.SensorType)
+                    {
+                        case (byte)AS5216.SENS_TYPE.SENS_HAMS8378_256:
+                            return "HAMS8378_256";
+                        case (byte)AS5216.SENS_TYPE.SENS_HAMS8378_1024:
+                            return "HAMS8378_1024";
+                        case (byte)AS5216.SENS_TYPE.SENS_ILX554:
+                            return "ILX554";
+                        case (byte)AS5216.SENS_TYPE.SENS_HAMS9201:
+                            return "HAMS9201";
+                        case (byte)AS5216.SENS_TYPE.SENS_TCD1304:
+                            return "TCD1304";
+                        case (byte)AS5216.SENS_TYPE.SENS_TSL1301:
+                            return "TSL1301";
+                        case (byte)AS5216.SENS_TYPE.SENS_TSL1401:
+                            return "TSL1401";
+                        case (byte)AS5216.SENS_TYPE.SENS_HAMS8378_512:
+                            return "HAMS8378_512";
+                        case (byte)AS5216.SENS_TYPE.SENS_HAMS9840:
+                            return "HAMS9840";
+                        default:
+                            return "???????";
+                    }
+                }
+                catch
+                {
+                    throw;
+                }
+            }
+        }
+    }
+}

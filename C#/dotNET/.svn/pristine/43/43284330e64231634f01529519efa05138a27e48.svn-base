@@ -1,0 +1,112 @@
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Windows.Forms;
+
+using CH.IO.Comm;
+using CH.IO.Service;
+using CH.Diagnostics;
+using System.Threading;
+
+using tbSharedMemory;
+
+namespace tbIPC_Client
+{
+    public partial class Client : Form
+    {
+        USART serial = null;
+        IPC ipc = null;
+        USART.CONFIG config_usart = null;
+        Debug dbg = new Debug("IPC");
+
+        SharedMemory sm = new SharedMemory();
+
+        public class SharedMemory
+        {
+            public string memo = "";
+            public double[] data = new double[2048];
+        }
+        public Client()
+        {
+            InitializeComponent();
+        }
+
+        private void Client_Load(object sender, EventArgs e)
+        {
+            config_usart = new USART.CONFIG();
+            config_usart.PortName = "COM3";
+            config_usart.BaudRate = "921600";
+            serial = new USART();
+            serial.Open(config_usart);
+
+            IPC.CONFIG config_ipc = new IPC.CONFIG();
+            sm.memo = "Client";
+            config_ipc.type = typeof(SharedMemory);
+            ipc = new IPC();
+            ipc.OnMsg += new INTERFACE.MsgEventHandler(ipc_OnMsg);
+            ipc.OnError += new INTERFACE.ErrorEventHandler(ipc_OnError);
+
+            ipc.Connect(serial, config_ipc);
+
+            ComWorker.RunWorkerAsync();
+        }
+
+        void ipc_OnError(object sender, string source, Exception err)
+        {
+            dbg.Out = "[Client:" + source + "] " + err.Message;
+        }
+
+        void ipc_OnMsg(object sender, string type, object msg)
+        {
+            if (type == typeof(SharedMemory).FullName)
+            {
+                sm = (SharedMemory)msg;
+                tbMsg.Text = sm.memo;
+            }
+        }
+
+        private void Client_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            bComWorker = false;
+
+        }
+
+        private void btSend_Click(object sender, EventArgs e)
+        {
+            sm.memo = tbMsg.Text;
+            ipc.Send(typeof(SharedMemory), sm);
+        }
+
+        int nTemp = 0;
+        bool bComWorker = true;
+        ManualResetEvent evComWorker = new ManualResetEvent(false);
+        private void ComWorker_DoWork(object sender, DoWorkEventArgs e)
+        {
+            while(bComWorker)
+            {
+                nTemp++;
+                sm.memo = nTemp.ToString();
+                ComWorker.ReportProgress(0);
+                Thread.Sleep(500);
+            }
+            evComWorker.Set();
+        }
+
+        private void ComWorker_ProgressChanged(object sender, ProgressChangedEventArgs e)
+        {
+            try
+            {
+                ipc.Send(typeof(SharedMemory), sm);
+            }
+            catch (System.Exception ex)
+            {
+                dbg.Out = ex.Message;
+            }
+            
+        }
+    }
+}

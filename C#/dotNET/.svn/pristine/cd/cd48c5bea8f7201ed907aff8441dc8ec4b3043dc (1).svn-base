@@ -1,0 +1,490 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.IO.Ports;
+using System.Threading;
+using System.ComponentModel;
+
+namespace CH.IO.Comm
+{
+    public partial class USART : SerialPort
+    {
+        #region The struct of version information
+        public struct CONFIG
+        {
+            public string PortName;
+            public string BaudRate;
+            public string DataBits;
+            public string Parity;
+            public string StopBits;
+            public string Handshake;
+            public UInt32 ReadTimeout;
+            public UInt32 WriteTimeout;
+            public UInt32 ReadThreashold;
+            public UInt32 WriteThreshold;
+        }
+
+        class VARIABLES
+        {
+            public bool bReadWorker = false;
+            public BackgroundWorker ReadWorker = null;
+            public Queue<byte[]> qReadBuf = null;
+            public byte[] pReadBuf = null;
+            public AutoResetEvent evRead = null;
+            public AutoResetEvent evReadAlive = null;
+            public byte[] pWriteDatum = null;
+
+            public VARIABLES()
+            {
+                bReadWorker = false;
+
+                ReadWorker = new BackgroundWorker();
+                ReadWorker.WorkerReportsProgress = true;
+                ReadWorker.WorkerSupportsCancellation = true;
+
+                qReadBuf = new Queue<byte[]>();
+                evRead = new AutoResetEvent(false);
+                evReadAlive = new AutoResetEvent(false);
+
+                pWriteDatum = new byte[1];
+            }
+        }
+
+        VARIABLES g_vb = null;
+        public delegate void USARTEventHandler(object sender, byte[] data, int count);
+        public event USARTEventHandler OnRxBytes = null;
+
+        public static CONFIG  GetDefaultConfig()
+        {
+            try
+            {
+                CONFIG pConfig = new CONFIG();
+                pConfig.PortName = "COM1";
+                pConfig.BaudRate = "115200";
+                pConfig.DataBits = "8";
+                pConfig.Parity = "None";
+                pConfig.StopBits = "1";
+                pConfig.Handshake = "None";
+                return pConfig;
+            }
+            catch
+            {
+                throw;
+            }
+        }
+        #endregion
+        
+        public static string[] GetBaudRates()
+        {
+            try
+            {
+                return new string[] { "75", "150", "200", "300", "600", "1200", "1800", "2400", "4800", "9600", "19200", "28800", "38400", "57600", "115200", "128000", "230400", "460800", "921600" };
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public static string[] GetDataBits()
+        {
+            try
+            {
+                return new string[] { "5", "6", "7", "8" };
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public static string[] GetStopBits()
+        {
+            try
+            {
+                return new string[] { "1", "1.5", "2" };
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public static string[] GetParities()
+        {
+            try
+            {
+                return new string[] { "Even", "Mark", "None", "Odd", "Space" };
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public static string[] GetHandShakes()
+        {
+            try
+            {
+                return new string[] { "None", "RequestToSend", "RequestToSendXOnXOff", "XOnXOff" };
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public static String AsciiToString(byte[] data, int count)
+        {
+            try
+            {
+                ASCIIEncoding ae = new ASCIIEncoding();
+                return new String(ae.GetChars(data, 0, count));
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public static byte[] StringToAscii(string str)
+        {
+            try
+            {
+                byte[] pStr = new byte[str.Length];
+                for (int i = 0; i < str.Length; i++)
+                {
+                    pStr[i] = System.Convert.ToByte(System.Convert.ToChar(str[i]));
+                }
+                return pStr;
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public USART()
+        {
+            try
+            {
+                this.PortName = "COM1";
+                this.BaudRate = 115200;
+                this.DataBits = 8;
+                this.Parity = Parity.None;
+                this.StopBits = StopBits.One;
+                this.Handshake = Handshake.None;
+                this.DataReceived += new SerialDataReceivedEventHandler(USART_DataReceived);
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public void Open(CONFIG config)
+        {
+            try
+            {
+                Close();
+                g_vb = new VARIABLES();
+
+                #region CONFIGURATION
+
+                this.PortName = config.PortName;
+                switch (config.BaudRate)
+                {
+                    case "75":
+                        {
+                            this.BaudRate = 75;
+                        } break;
+                    case "150":
+                        {
+                            this.BaudRate = 150;
+                        } break;
+                    case "200":
+                        {
+                            this.BaudRate = 200;
+                        } break;
+                    case "300":
+                        {
+                            this.BaudRate = 300;
+                        } break;
+                    case "600":
+                        {
+                            this.BaudRate = 600;
+                        } break;
+                    case "1200":
+                        {
+                            this.BaudRate = 1200;
+                        } break;
+                    case "1800":
+                        {
+                            this.BaudRate = 1800;
+                        } break;
+                    case "2400":
+                        {
+                            this.BaudRate = 2400;
+                        } break;
+                    case "4800":
+                        {
+                            this.BaudRate = 4800;
+                        } break;
+                    case "9600":
+                        {
+                            this.BaudRate = 9600;
+                        } break;
+                    case "19200":
+                        {
+                            this.BaudRate = 19200;
+                        } break;
+                    case "28800":
+                        {
+                            this.BaudRate = 28800;
+                        } break;
+                    case "38400":
+                        {
+                            this.BaudRate = 38400;
+                        } break;
+                    case "57600":
+                        {
+                            this.BaudRate = 57600;
+                        } break;
+                    case "115200":
+                        {
+                            this.BaudRate = 115200;
+                        } break;
+                    case "128000":
+                        {
+                            this.BaudRate = 128000;
+                        } break;
+                    case "230400":
+                        {
+                            this.BaudRate = 230400;
+                        } break;
+                    case "460800":
+                        {
+                            this.BaudRate = 460800;
+                        } break;
+                    case "921600":
+                        {
+                            this.BaudRate = 921600;
+                        } break;
+                    default:
+                        {
+                            throw new Exception("This Baud Rate is not supported.");
+                        }
+                }
+
+                switch (config.DataBits)
+                {
+                    case "5":
+                        {
+                            this.DataBits = 5;
+                        } break;
+                    case "6":
+                        {
+                            this.DataBits = 6;
+                        } break;
+                    case "7":
+                        {
+                            this.DataBits = 7;
+                        } break;
+                    case "8":
+                        {
+                            this.DataBits = 8;
+                        } break;
+                    default:
+                        {
+                            throw new Exception("This Data Bits is not supported.");
+                        }
+                }
+
+                switch (config.Parity)
+                {
+                    case "Even":
+                        {
+                            this.Parity = Parity.Even;
+                        } break;
+                    case "Mark":
+                        {
+                            this.Parity = Parity.Mark;
+                        } break;
+                    case "None":
+                        {
+                            this.Parity = Parity.None;
+                        } break;
+                    case "Odd":
+                        {
+                            this.Parity = Parity.Odd;
+                        } break;
+                    case "Space":
+                        {
+                            this.Parity = Parity.Space;
+                        } break;
+                    default:
+                        {
+                            throw new Exception("This Parity is not supported.");
+                        }
+                }
+
+                switch (config.StopBits)
+                {
+                    case "1":
+                        {
+                            this.StopBits = StopBits.One;
+                        } break;
+                    case "1.5":
+                        {
+                            this.StopBits = StopBits.OnePointFive;
+                        } break;
+                    case "2":
+                        {
+                            this.StopBits = StopBits.Two;
+                        } break;
+                    default:
+                        {
+                            throw new Exception("This Stop Bits is not supported.");
+                        }
+                }
+
+                switch (config.Handshake)
+                {
+                    case "None":
+                        {
+                            this.Handshake = Handshake.None;
+                        } break;
+                    case "RequestToSend":
+                        {
+                            this.Handshake = Handshake.RequestToSend;
+                        } break;
+                    case "RequestToSendXOnXOff":
+                        {
+                            this.Handshake = Handshake.RequestToSendXOnXOff;
+                        } break;
+                    case "XOnXOff":
+                        {
+                            this.Handshake = Handshake.XOnXOff;
+                        } break;
+                    default:
+                        {
+                            throw new Exception("This HandShake is not supported.");
+                        }
+                }
+                #endregion
+
+                base.Open();
+
+                g_vb.bReadWorker = true;
+                g_vb.ReadWorker.DoWork += new DoWorkEventHandler(ReadWorker_DoWork);
+                g_vb.ReadWorker.ProgressChanged += new ProgressChangedEventHandler(ReadWorker_ProgressChanged);
+                g_vb.ReadWorker.RunWorkerAsync();
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public new void Close()
+        {
+            try
+            {
+                if (null != g_vb)
+                    if (true == g_vb.bReadWorker)
+                    {
+                        g_vb.bReadWorker = false;
+                        g_vb.evRead.Set();
+                        g_vb.evReadAlive.WaitOne();
+                        base.Close();
+                    }
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        void USART_DataReceived(object sender, SerialDataReceivedEventArgs e)
+        {
+            try
+            {
+                if (null != OnRxBytes)
+                {                    
+                    g_vb.pReadBuf = new byte[this.BytesToRead];
+                    this.Read(g_vb.pReadBuf, 0, g_vb.pReadBuf.Length);
+                    g_vb.qReadBuf.Enqueue(g_vb.pReadBuf);
+                    g_vb.evRead.Set();
+                }
+            }
+            catch { }
+        }
+
+        void ReadWorker_ProgressChanged(object sender, ProgressChangedEventArgs e)
+        {
+            try
+            {
+                if (true == g_vb.bReadWorker)
+                {
+                    if (null != OnRxBytes)
+                    {
+                        while (0 < g_vb.qReadBuf.Count)
+                        {
+                            byte[] pData = g_vb.qReadBuf.Dequeue();
+                            OnRxBytes(this, pData, pData.Length);
+                        }
+                    }
+                }
+            }
+            catch { }
+        }
+
+        void ReadWorker_DoWork(object sender, DoWorkEventArgs e)
+        {
+            try
+            {
+                while (true == g_vb.bReadWorker)
+                {
+                    g_vb.evRead.WaitOne();
+                    g_vb.ReadWorker.ReportProgress(0);
+                }
+                g_vb.evReadAlive.Set();
+            }
+            catch { }
+        }
+
+        #region WRITE
+
+        public void Write(byte datum)
+        {
+            try
+            {
+                g_vb.pWriteDatum[0] = datum;
+                base.Write(g_vb.pWriteDatum, 0, 1);
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public void Write(char datum)
+        {
+            try
+            {
+                g_vb.pWriteDatum[0] = (byte)datum;
+                base.Write(g_vb.pWriteDatum, 0, 1);
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        #endregion
+
+
+
+    }
+}

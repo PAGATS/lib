@@ -1,0 +1,81 @@
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Windows.Forms;
+
+using CH.IO.Comm;
+
+namespace tbUSART
+{
+    public partial class tbUSART_TALK : Form
+    {
+        USART_TALK serial = null;
+
+        public tbUSART_TALK()
+        {
+            InitializeComponent();
+        }
+
+        private void USART_RSS_Load(object sender, EventArgs e)
+        {
+            serial = new USART_TALK('<', '>', 500);
+            serial.OnRxMsg += new USART_TALK.USART_TalkEventHandler(serial_OnRxMsg);
+        }
+
+        void serial_OnRxMsg(object sender, string msg)
+        {
+            tbRx.Text = msg;
+        }
+
+        private void USART_RSS_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            serial.Close();
+        }
+
+        private void btOpen_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                if("Open" == btOpen.Text)
+                {
+                    USART.CONFIG config = USART.GetDefaultConfig();
+                    config.PortName = (string)cbPort.Items[cbPort.SelectedIndex];
+                    serial.Open(config);
+                    btOpen.Text = "Close";
+                }
+                else
+                {
+                    serial.Close();
+                    btOpen.Text = "Open";
+                }
+                
+            }
+            catch (System.Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+        private void btSend_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                serial.Write(tbTx.Text);
+            }
+            catch (System.Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+        private void cbPort_MouseClick(object sender, MouseEventArgs e)
+        {
+            cbPort.Items.Clear();
+            cbPort.Items.AddRange(USART.GetPortNames());
+        }
+    }
+}

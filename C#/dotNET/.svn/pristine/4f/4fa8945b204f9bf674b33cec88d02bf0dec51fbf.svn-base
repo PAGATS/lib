@@ -1,0 +1,174 @@
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Windows.Forms;
+
+using System.Runtime.Serialization;
+using System.Runtime.Serialization.Formatters.Binary;
+using System.Runtime.InteropServices;
+
+using CH.IO.Comm;
+using CH.Diagnostics;
+
+namespace tbAS5216
+{
+    public partial class tbAS5216 : Form
+    {
+        public long m_DeviceHandle;
+
+        AS5216 avs = null;
+        Debug dbg = new Debug("tbAS5216");
+        AS5216.AvsIdentityType[] avst = null;
+
+        public tbAS5216()
+        {
+            InitializeComponent();
+        }
+
+        private void tbAS5216_Load(object sender, EventArgs e)
+        {
+            m_DeviceHandle = AS5216.INVALID_AVS_HANDLE_VALUE;
+            string str = typeof(string).ToString();
+
+        }
+
+        private void tbAS5216_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            try
+            {
+                if (null != avs)
+                {
+                    if (avs.IsOpen)
+                    {
+                        avs.StopMeasurement();
+                        avs.Close();
+                    }
+
+                    AS5216.Unmount();
+                }
+            }
+            catch (System.Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+        protected override void WndProc(ref Message a_WinMess)
+        {
+            try
+            {
+                if(a_WinMess.Msg == AS5216.WM_DEVICE_RESET ||
+                    a_WinMess.Msg == AS5216.WM_DBG_INFOAs ||
+                    a_WinMess.Msg == AS5216.WM_USER
+                    )
+                {
+                    MessageBox.Show(a_WinMess.Msg.ToString());
+                }
+
+                if (a_WinMess.Msg == AS5216.WM_MEAS_READY)
+                {
+                    if ((int)a_WinMess.WParam >= AS5216.ERR_SUCCESS)
+                    {
+                        if (AS5216.ERR_SUCCESS == (int)a_WinMess.WParam) // normal measurements
+                        {
+                            // "Meas.Status: success";
+
+                            if (avs.GetNumPixels > 0)
+                            {
+                                double[] pLambda = avs.GetLambda;
+                                AS5216.SCOPE_DATA pSpectrum = avs.GetScopeData;
+                                byte[] pSaturatedData = avs.GetSaturatedPixels;
+
+                                tbResult.Text = pSpectrum.pSpectrum[0].ToString();
+                            }
+                        }
+                        else    // a WParam > 0 indicates a response to StoreToRam
+                        // using StoreToRAM requires firmware version 0.20.0.0 or later
+                        // a_WinMess.WParam holds the number of scans stored in RAM
+                        // import into application by call to AVS_GetScopeData for each scan
+                        {
+                            // "Meas.Status: Reading RAM";
+                            for (int j = 1; j <= a_WinMess.WParam.ToInt32(); j++)
+                            {
+                                AS5216.SCOPE_DATA pSpectrum = avs.GetScopeData;
+                            }
+                        }
+                    }
+                    else // message.WParam < 0 indicates error 
+                    {
+                        //"Meas.Status: failed. Error " + a_WinMess.WParam.ToString();
+                    }
+                }
+                else
+                {
+
+                }
+            }
+            catch{}
+            finally
+            {
+                base.WndProc(ref a_WinMess);
+            }
+        }
+
+        private void btOpen_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                avst = AS5216.Mount(this.Handle);
+
+                if(null != avst)
+                {
+                    AS5216.CONFIG config = new AS5216.CONFIG();
+                    config.IDType = avst[0];
+
+                    avs = new AS5216();
+                    avs.Open(config);
+
+                    //avs.MasterSetSyncMode = true;
+
+                    AS5216.VERSION_INFO info = avs.GetVersionInfo;
+
+                    ushort pixelcnt = avs.GetNumPixels;
+
+                    double[] lambda = avs.GetLambda;
+
+                    AS5216.DeviceConfigType devType = avs.GetParameter;
+
+                    string sensorType = avs.GetSensorType;
+
+                    
+                }
+
+                
+
+                tbResult.Text = "Ready";
+
+                if (null != avst)
+                {
+                                   
+                }
+            }
+            catch (System.Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
+
+        private void btClose_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                avs.Close();
+            }
+            catch (System.Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
+    }
+}

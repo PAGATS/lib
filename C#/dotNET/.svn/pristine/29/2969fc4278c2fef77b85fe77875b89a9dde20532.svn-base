@@ -1,0 +1,109 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+
+using System.Diagnostics;
+
+namespace CH.System
+{
+    public partial class Zygote
+    {
+        // One instance is one process manager. so if you want to run two proceses, you should make two instances of 
+        // Run "exe" files as process in Open method and get process handle number to manage after
+        // Manage opened processes that must change their text within some secs (it is going to be decided on it's creation time.)
+
+        public class CONFIG
+        {
+            public string ExePath = "";
+        }
+
+        class VARIABLE
+        {
+            public CONFIG config = null;
+            public Process process = null;
+            public string processName = "";
+        }
+
+        VARIABLE g;
+        
+        public Zygote()
+        {
+            g = new VARIABLE();
+        }
+
+        public bool IsOpen
+        {
+            get
+            {
+                return (null != g.process) ? true : false;
+            }
+        }
+
+        public string ProcessName
+        {
+            get
+            {
+                try
+                {
+                    if(null != g.process)
+                    {
+                        return g.process.ProcessName;
+                    }
+                    throw new Exception("Process is not found");
+                }
+                catch
+                {
+                    throw;
+                }
+            }
+        }
+
+        public void Open(object config)
+        {
+            try
+            {
+                if(null != g.process)
+                {
+                    Close();
+                }
+
+                g.config = (CONFIG)config;
+                g.process = Process.Start(g.config.ExePath);
+                g.processName = g.process.ProcessName;
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public void Close()
+        {
+            try
+            {
+                g.process.Kill();
+                g.process.Close();
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public void Write(string msg)
+        {
+            try
+            {
+                if(IsOpen)
+                {
+                    g.process.StandardInput.Write(msg);
+                }
+            }
+            catch
+            {
+                throw;
+            }
+        }
+    }
+}

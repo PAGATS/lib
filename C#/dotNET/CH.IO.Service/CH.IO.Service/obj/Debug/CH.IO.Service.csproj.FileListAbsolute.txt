@@ -1,0 +1,7 @@
+D:\03_Vision\03_Library\01_Software\01_NET\CH.IO.Service\CH.IO.Service\bin\Debug\CH.IO.Service.dll
+D:\03_Vision\03_Library\01_Software\01_NET\CH.IO.Service\CH.IO.Service\bin\Debug\CH.IO.Service.pdb
+D:\03_Vision\03_Library\01_Software\01_NET\CH.IO.Service\CH.IO.Service\bin\Debug\CH.IO.Comm.dll
+D:\03_Vision\03_Library\01_Software\01_NET\CH.IO.Service\CH.IO.Service\bin\Debug\CH.IO.Comm.pdb
+D:\03_Vision\03_Library\01_Software\01_NET\CH.IO.Service\CH.IO.Service\obj\Debug\ResolveAssemblyReference.cache
+D:\03_Vision\03_Library\01_Software\01_NET\CH.IO.Service\CH.IO.Service\obj\Debug\CH.IO.Service.dll
+D:\03_Vision\03_Library\01_Software\01_NET\CH.IO.Service\CH.IO.Service\obj\Debug\CH.IO.Service.pdb

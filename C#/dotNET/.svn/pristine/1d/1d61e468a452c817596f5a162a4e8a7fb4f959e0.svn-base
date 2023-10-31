@@ -1,0 +1,534 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.IO.Ports;
+using System.Threading;
+using System.ComponentModel;
+
+namespace CH.IO.Comm
+{
+    public partial class USART : Device
+    {
+        #region The struct of version information
+        public struct CONFIG
+        {
+            public string PortName;
+            public string BaudRate;
+            public string DataBits;
+            public string Parity;
+            public string StopBits;
+            public string Handshake;
+            public UInt32 ReadTimeout;
+            public UInt32 WriteTimeout;
+            public UInt32 ReadThreashold;
+            public UInt32 WriteThreshold;
+        }
+
+        class VARIABLES
+        {
+            public SerialPort serial = null;
+            public bool bReadWorker = false;
+            public BackgroundWorker ReadWorker = null;
+            public Queue<byte[]> qReadBuf = null;
+            public byte[] pReadBuf = null;
+            public byte[] pReadDatum = null;
+            public AutoResetEvent evRead = null;
+            public AutoResetEvent evReadAlive = null;
+            public byte[] pWriteDatum = null;
+
+            public VARIABLES()
+            {
+                serial = new SerialPort();
+
+                bReadWorker = false;
+
+                ReadWorker = new BackgroundWorker();
+                ReadWorker.WorkerReportsProgress = true;
+                ReadWorker.WorkerSupportsCancellation = true;
+
+                qReadBuf = new Queue<byte[]>();
+                evRead = new AutoResetEvent(false);
+                evReadAlive = new AutoResetEvent(false);
+
+                pReadDatum = new byte[1];
+                pWriteDatum = new byte[1];
+            }
+        }
+
+        VARIABLES g_vb = null;
+        public override event RxEventHandler OnRxBuf = null;
+        public override event ErrorEventHandler OnError = null;
+
+        public static CONFIG GetDefaultConfig()
+        {
+            try
+            {
+                CONFIG pConfig = new CONFIG();
+                pConfig.PortName = "COM1";
+                pConfig.BaudRate = "115200";
+                pConfig.DataBits = "8";
+                pConfig.Parity = "None";
+                pConfig.StopBits = "1";
+                pConfig.Handshake = "None";
+                return pConfig;
+            }
+            catch
+            {
+                throw;
+            }
+        }
+        #endregion
+
+        public static string[] GetPortNames()
+        {
+            try
+            {
+                return SerialPort.GetPortNames();
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public static string[] GetBaudRates()
+        {
+            try
+            {                
+                return new string[] { "75", "150", "200", "300", "600", "1200", "1800", "2400", "4800", "9600", "19200", "28800", "38400", "57600", "115200", "128000", "230400", "460800", "921600" };
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public static string[] GetDataBits()
+        {
+            try
+            {
+                return new string[] { "5", "6", "7", "8" };
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public static string[] GetStopBits()
+        {
+            try
+            {
+                return new string[] { "1", "1.5", "2" };
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public static string[] GetParities()
+        {
+            try
+            {
+                return new string[] { "Even", "Mark", "None", "Odd", "Space" };
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public static string[] GetHandShakes()
+        {
+            try
+            {
+                return new string[] { "None", "RequestToSend", "RequestToSendXOnXOff", "XOnXOff" };
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public USART()
+        {
+            try
+            {
+                g_vb = new VARIABLES();
+
+                g_vb.serial.PortName = "COM1";
+                g_vb.serial.BaudRate = 115200;
+                g_vb.serial.DataBits = 8;
+                g_vb.serial.Parity = Parity.None;
+                g_vb.serial.StopBits = StopBits.One;
+                g_vb.serial.Handshake = Handshake.None;
+                g_vb.serial.DataReceived += new SerialDataReceivedEventHandler(USART_DataReceived);
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public override void Open(object config)
+        {
+            try
+            {
+                Close();
+
+                #region CONFIGURATION
+                CONFIG cfg = (CONFIG)config;
+                g_vb.serial.PortName = cfg.PortName;
+                switch (cfg.BaudRate)
+                {
+                    case "75":
+                        {
+                            g_vb.serial.BaudRate = 75;
+                        } break;
+                    case "150":
+                        {
+                            g_vb.serial.BaudRate = 150;
+                        } break;
+                    case "200":
+                        {
+                            g_vb.serial.BaudRate = 200;
+                        } break;
+                    case "300":
+                        {
+                            g_vb.serial.BaudRate = 300;
+                        } break;
+                    case "600":
+                        {
+                            g_vb.serial.BaudRate = 600;
+                        } break;
+                    case "1200":
+                        {
+                            g_vb.serial.BaudRate = 1200;
+                        } break;
+                    case "1800":
+                        {
+                            g_vb.serial.BaudRate = 1800;
+                        } break;
+                    case "2400":
+                        {
+                            g_vb.serial.BaudRate = 2400;
+                        } break;
+                    case "4800":
+                        {
+                            g_vb.serial.BaudRate = 4800;
+                        } break;
+                    case "9600":
+                        {
+                            g_vb.serial.BaudRate = 9600;
+                        } break;
+                    case "19200":
+                        {
+                            g_vb.serial.BaudRate = 19200;
+                        } break;
+                    case "28800":
+                        {
+                            g_vb.serial.BaudRate = 28800;
+                        } break;
+                    case "38400":
+                        {
+                            g_vb.serial.BaudRate = 38400;
+                        } break;
+                    case "57600":
+                        {
+                            g_vb.serial.BaudRate = 57600;
+                        } break;
+                    case "115200":
+                        {
+                            g_vb.serial.BaudRate = 115200;
+                        } break;
+                    case "128000":
+                        {
+                            g_vb.serial.BaudRate = 128000;
+                        } break;
+                    case "230400":
+                        {
+                            g_vb.serial.BaudRate = 230400;
+                        } break;
+                    case "460800":
+                        {
+                            g_vb.serial.BaudRate = 460800;
+                        } break;
+                    case "921600":
+                        {
+                            g_vb.serial.BaudRate = 921600;
+                        } break;
+                    default:
+                        {
+                            throw new Exception("This Baud Rate is not supported.");
+                        }
+                }
+
+                switch (cfg.DataBits)
+                {
+                    case "5":
+                        {
+                            g_vb.serial.DataBits = 5;
+                        } break;
+                    case "6":
+                        {
+                            g_vb.serial.DataBits = 6;
+                        } break;
+                    case "7":
+                        {
+                            g_vb.serial.DataBits = 7;
+                        } break;
+                    case "8":
+                        {
+                            g_vb.serial.DataBits = 8;
+                        } break;
+                    default:
+                        {
+                            throw new Exception("This Data Bits is not supported.");
+                        }
+                }
+
+                switch (cfg.Parity)
+                {
+                    case "Even":
+                        {
+                            g_vb.serial.Parity = Parity.Even;
+                        } break;
+                    case "Mark":
+                        {
+                            g_vb.serial.Parity = Parity.Mark;
+                        } break;
+                    case "None":
+                        {
+                            g_vb.serial.Parity = Parity.None;
+                        } break;
+                    case "Odd":
+                        {
+                            g_vb.serial.Parity = Parity.Odd;
+                        } break;
+                    case "Space":
+                        {
+                            g_vb.serial.Parity = Parity.Space;
+                        } break;
+                    default:
+                        {
+                            throw new Exception("This Parity is not supported.");
+                        }
+                }
+
+                switch (cfg.StopBits)
+                {
+                    case "1":
+                        {
+                            g_vb.serial.StopBits = StopBits.One;
+                        } break;
+                    case "1.5":
+                        {
+                            g_vb.serial.StopBits = StopBits.OnePointFive;
+                        } break;
+                    case "2":
+                        {
+                            g_vb.serial.StopBits = StopBits.Two;
+                        } break;
+                    default:
+                        {
+                            throw new Exception("This Stop Bits is not supported.");
+                        }
+                }
+
+                switch (cfg.Handshake)
+                {
+                    case "None":
+                        {
+                            g_vb.serial.Handshake = Handshake.None;
+                        } break;
+                    case "RequestToSend":
+                        {
+                            g_vb.serial.Handshake = Handshake.RequestToSend;
+                        } break;
+                    case "RequestToSendXOnXOff":
+                        {
+                            g_vb.serial.Handshake = Handshake.RequestToSendXOnXOff;
+                        } break;
+                    case "XOnXOff":
+                        {
+                            g_vb.serial.Handshake = Handshake.XOnXOff;
+                        } break;
+                    default:
+                        {
+                            throw new Exception("This HandShake is not supported.");
+                        }
+                }
+                #endregion
+
+                g_vb.serial.Open();
+
+                g_vb.bReadWorker = true;
+                g_vb.ReadWorker.DoWork += new DoWorkEventHandler(ReadWorker_DoWork);
+                g_vb.ReadWorker.ProgressChanged += new ProgressChangedEventHandler(ReadWorker_ProgressChanged);
+                g_vb.ReadWorker.RunWorkerAsync();
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public override void Close()
+        {
+            try
+            {
+                if (true == g_vb.bReadWorker)
+                    {
+                        g_vb.bReadWorker = false;
+                        g_vb.evRead.Set();
+                        g_vb.evReadAlive.WaitOne();
+                        g_vb.serial.Close();
+                    }
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        void USART_DataReceived(object sender, SerialDataReceivedEventArgs e)
+        {
+            try
+            {
+                if (null != OnRxBuf)
+                {
+                    g_vb.pReadBuf = new byte[g_vb.serial.BytesToRead];
+                    g_vb.serial.Read(g_vb.pReadBuf, 0, g_vb.pReadBuf.Length);
+                    g_vb.qReadBuf.Enqueue(g_vb.pReadBuf);
+                    g_vb.evRead.Set();
+                }
+            }
+            catch (Exception ex)
+            {
+                if (null != OnError)
+                {
+                    OnError(this, ex);
+                }
+            }
+        }
+
+        void ReadWorker_ProgressChanged(object sender, ProgressChangedEventArgs e)
+        {
+            try
+            {
+                if (true == g_vb.bReadWorker)
+                {
+                    if (null != OnRxBuf)
+                    {
+                        while (0 < g_vb.qReadBuf.Count)
+                        {
+                            byte[] pData = g_vb.qReadBuf.Dequeue();
+                            OnRxBuf(this, pData, pData.Length);
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                if (null != OnError)
+                {
+                    OnError(this, ex);
+                }
+            }
+        }
+
+        void ReadWorker_DoWork(object sender, DoWorkEventArgs e)
+        {
+            try
+            {
+                while (true == g_vb.bReadWorker)
+                {
+                    g_vb.evRead.WaitOne();
+                    g_vb.ReadWorker.ReportProgress(0);
+                }
+                g_vb.evReadAlive.Set();
+            }
+            catch (Exception ex)
+            {
+                if (null != OnError)
+                {
+                    OnError(this, ex);
+                }
+            }
+        }
+
+        #region READ
+        public override void Read(byte datum)
+        {
+            try
+            {
+                g_vb.pReadDatum[0] = datum;
+                g_vb.serial.Read(g_vb.pReadDatum, 0, 1);
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public override void Read(byte[] buffer, int offset, int count)
+        {
+            try
+            {
+                g_vb.serial.Read(buffer, offset, count);
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        #endregion
+
+        #region WRITE
+
+        public override void Write(byte datum)
+        {
+            try
+            {
+                g_vb.pWriteDatum[0] = datum;
+                g_vb.serial.Write(g_vb.pWriteDatum, 0, 1);
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public override void Write(byte[] buffer, int offset, int count)
+        {
+            try
+            {
+                g_vb.serial.Write(buffer, offset, count);
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public override void Write(string msg)
+        {
+            try
+            {
+                g_vb.serial.Write(msg);
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        #endregion
+
+
+
+    }
+}

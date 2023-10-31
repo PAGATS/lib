@@ -1,0 +1,167 @@
+﻿using System;
+using System.Threading;
+
+namespace CH.IO.Comm
+{
+    class CQ
+    {
+        int m_capacity;
+        int m_count;
+        int m_rxIdx;
+        int m_txIdx;
+        int m_rearSize;
+        byte[] m_buf;
+        Mutex m_sync;
+
+        public CQ(int bufSize)
+        {
+            m_sync = new Mutex();
+
+            m_buf = new byte[bufSize];
+            m_capacity = bufSize;
+        }
+
+        public void InitCQ()
+        {
+            m_sync.WaitOne();
+
+            m_count = 0;
+            m_rxIdx = 0;
+            m_txIdx = 0;
+            m_rearSize = 0;
+
+            m_sync.ReleaseMutex();
+        }
+
+        public int Count
+        {
+            get { return m_count; }
+        }
+
+        public int Capacity
+        {
+            get { return m_capacity; }
+        }
+
+        public int Free
+        {
+            get { return m_capacity - m_count; }
+        }
+
+        public int Enqueue(byte datum)
+        {
+            m_sync.WaitOne();
+
+            if (m_count == m_capacity)
+            {
+                m_sync.ReleaseMutex();
+                return 0;
+            }
+
+            m_buf[m_rxIdx++] = datum;
+            if (m_rxIdx == m_capacity) m_rxIdx = 0;
+
+            m_sync.ReleaseMutex();
+            return 1;
+        }
+
+        public int Enqueue(byte[] input, int offset, int size)
+        {
+            if (offset + size > input.Length)
+                return -1;
+            m_sync.WaitOne();
+
+            if (size == 0 || m_count + size > m_capacity)
+            {
+                m_sync.ReleaseMutex();
+                return 0;
+            }
+
+            try
+            {
+                m_rearSize = m_capacity - m_rxIdx;
+                if (m_rearSize >= size)
+                {
+                    Array.Copy(input, offset, m_buf, m_rxIdx, size);
+                    m_rxIdx += size;
+                    if (m_rxIdx == m_capacity)
+                        m_rxIdx = 0;
+                }
+                else
+                {
+                    Array.Copy(input, offset, m_buf, m_rxIdx, m_rearSize);
+                    Array.Copy(input, offset + m_rearSize, m_buf, 0,
+                        size - m_rearSize);
+                    m_rxIdx = size - m_rearSize;
+                }
+                m_count += size;
+                m_sync.ReleaseMutex();
+                return size;
+            }
+            catch
+            {
+                m_sync.ReleaseMutex();
+                throw;
+            }
+        }
+
+        public int Dequeue(out byte datum)
+        {
+            datum = 0;
+            m_sync.WaitOne();
+
+            if (m_count == 0)
+            {
+                m_sync.ReleaseMutex();
+                return 0;
+            }
+
+            datum = m_buf[m_txIdx++];
+            if (m_txIdx == m_capacity) m_txIdx = 0;
+
+            m_sync.ReleaseMutex();
+            return 1;
+        }
+
+        public int Dequeue(byte[] output, int offset, int size)
+        {
+            if (offset >= output.Length)
+                return -1;
+            m_sync.WaitOne();
+
+            if (m_count == 0)
+            {
+                m_sync.ReleaseMutex();
+                return 0;
+            }
+            if (m_count < size)
+                size = m_count;
+            try
+            {
+                m_rearSize = m_capacity - m_txIdx;
+                if (m_rearSize >= size)
+                {
+                    Array.Copy(m_buf, m_txIdx, output, offset, size);
+                    m_txIdx += size;
+                    if (m_txIdx == m_capacity)
+                        m_txIdx = 0;
+                }
+                else
+                {
+                    Array.Copy(m_buf, m_txIdx, output, offset, m_rearSize);
+                    Array.Copy(m_buf, 0, output, offset + m_rearSize,
+                        size - m_rearSize);
+                    m_txIdx = size - m_rearSize;
+                }
+                m_count -= size;
+                m_sync.ReleaseMutex();
+                return size;
+            }
+            catch
+            {
+                m_sync.ReleaseMutex();
+                throw;
+            }
+        }
+    }
+}

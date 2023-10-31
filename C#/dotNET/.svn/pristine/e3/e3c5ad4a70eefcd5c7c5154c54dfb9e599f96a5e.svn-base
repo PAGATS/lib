@@ -1,0 +1,78 @@
+﻿using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Windows.Forms;
+
+using CH.IO.Comm;
+using CH.IO.Service;
+
+using tbSharedMemory;
+
+namespace tbIPC_Server
+{
+    public partial class Server : Form
+    {
+        USART serial = null;
+        IPC ipc = null;
+        
+        SharedMemory sm = new SharedMemory();
+
+        
+
+        public Server()
+        {
+            InitializeComponent();
+        }
+
+        private void Server_Load(object sender, EventArgs e)
+        {
+            USART.CONFIG config_usart = new USART.CONFIG();
+            config_usart.PortName = "COM4";
+            serial = new USART();
+            serial.Open(config_usart);
+
+            IPC.CONFIG config_ipc = new IPC.CONFIG();
+            config_ipc.RgClass = sm;
+            config_ipc.RgClassType = typeof(SharedMemory);
+            ipc = new IPC();
+            ipc.OnMsg += new INTERFACE.MsgEventHandler(ipc_OnMsg);
+
+            ipc.Connect(serial, config_ipc);
+
+            UIWorker.RunWorkerAsync();
+        }
+
+        void ipc_OnMsg(object sender, Type type, object msg)
+        {
+            if (type == typeof(SharedMemory))
+            {
+                sm = (SharedMemory)msg;
+            }
+        }
+
+        private void Server_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            bUIWorker = false;
+        }
+
+        bool bUIWorker = true;
+        private void UIWorker_DoWork(object sender, DoWorkEventArgs e)
+        {
+            while(bUIWorker)
+            {
+                UIWorker.ReportProgress(0);
+                System.Threading.Thread.Sleep(100);
+            }
+        }
+
+        private void UIWorker_ProgressChanged(object sender, ProgressChangedEventArgs e)
+        {
+            if (null != sm)
+                tbMsg.Text = sm.memo;
+        }
+    }
+}

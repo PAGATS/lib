@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?><?xml-stylesheet type='text/xsl' href='_UpgradeReport_Files/UpgradeReport.xslt'?><UpgradeLog>
+<Properties><Property Name="Solution" Value="C_Sharp_Application">
+</Property><Property Name="솔루션 파일" Value="D:\03_Vision\03_Library\01_Software\01_NET\CH.IO.Comm.AS5216\Resource\Example\Vc#2005\C_Sharp_Application.sln">
+</Property><Property Name="Date" Value="2012년 1월 30일 월요일">
+</Property><Property Name="Time" Value="오후 13:49">
+</Property><Property Name="로그 번호" Value="2">
+</Property></Properties><Event ErrorLevel="0" Project="" Source="C_Sharp_Application.sln" Description="파일을 D:\03_Vision\03_Library\01_Software\01_NET\CH.IO.Comm.AS5216\Resource\Example\Vc#2005\Backup\C_Sharp_Application.sln(으)로 백업했습니다.">
+</Event><Event ErrorLevel="0" Project="C_Sharp_Application" Source="C_Sharp_Application.csproj" Description="프로젝트 파일을 D:\03_Vision\03_Library\01_Software\01_NET\CH.IO.Comm.AS5216\Resource\Example\Vc#2005\Backup\C_Sharp_Application.csproj(으)로 백업했습니다.">
+</Event><Event ErrorLevel="0" Project="C_Sharp_Application" Source="C_Sharp_Application.csproj.user" Description="프로젝트 사용자 파일을 D:\03_Vision\03_Library\01_Software\01_NET\CH.IO.Comm.AS5216\Resource\Example\Vc#2005\Backup\C_Sharp_Application.csproj.user(으)로 백업했습니다.">
+</Event><Event ErrorLevel="0" Project="C_Sharp_Application" Source="AnalogIO.cs" Description="파일을 D:\03_Vision\03_Library\01_Software\01_NET\CH.IO.Comm.AS5216\Resource\Example\Vc#2005\Backup\AnalogIO.cs(으)로 백업했습니다.">
+</Event><Event ErrorLevel="0" Project="C_Sharp_Application" Source="AssemblyInfo.cs" Description="파일을 D:\03_Vision\03_Library\01_Software\01_NET\CH.IO.Comm.AS5216\Resource\Example\Vc#2005\Backup\AssemblyInfo.cs(으)로 백업했습니다.">
+</Event><Event ErrorLevel="0" Project="C_Sharp_Application" Source="AVS5216.cs" Description="파일을 D:\03_Vision\03_Library\01_Software\01_NET\CH.IO.Comm.AS5216\Resource\Example\Vc#2005\Backup\AVS5216.cs(으)로 백업했습니다.">
+</Event><Event ErrorLevel="0" Project="C_Sharp_Application" Source="DigitalIO.cs" Description="파일을 D:\03_Vision\03_Library\01_Software\01_NET\CH.IO.Comm.AS5216\Resource\Example\Vc#2005\Backup\DigitalIO.cs(으)로 백업했습니다.">
+</Event><Event ErrorLevel="0" Project="C_Sharp_Application" Source="Form1.cs" Description="파일을 D:\03_Vision\03_Library\01_Software\01_NET\CH.IO.Comm.AS5216\Resource\Example\Vc#2005\Backup\Form1.cs(으)로 백업했습니다.">
+</Event><Event ErrorLevel="0" Project="C_Sharp_Application" Source="App.ico" Description="파일을 D:\03_Vision\03_Library\01_Software\01_NET\CH.IO.Comm.AS5216\Resource\Example\Vc#2005\Backup\App.ico(으)로 백업했습니다.">
+</Event><Event ErrorLevel="0" Project="C_Sharp_Application" Source="AnalogIO.resx" Description="파일을 D:\03_Vision\03_Library\01_Software\01_NET\CH.IO.Comm.AS5216\Resource\Example\Vc#2005\Backup\AnalogIO.resx(으)로 백업했습니다.">
+</Event><Event ErrorLevel="0" Project="C_Sharp_Application" Source="DigitalIO.resx" Description="파일을 D:\03_Vision\03_Library\01_Software\01_NET\CH.IO.Comm.AS5216\Resource\Example\Vc#2005\Backup\DigitalIO.resx(으)로 백업했습니다.">
+</Event><Event ErrorLevel="0" Project="C_Sharp_Application" Source="Form1.resx" Description="파일을 D:\03_Vision\03_Library\01_Software\01_NET\CH.IO.Comm.AS5216\Resource\Example\Vc#2005\Backup\Form1.resx(으)로 백업했습니다.">
+</Event><Event ErrorLevel="0" Project="C_Sharp_Application" Source="C_Sharp_Application.csproj" Description="프로젝트를 변환했습니다.">
+</Event><Event ErrorLevel="3" Project="C_Sharp_Application" Source="C_Sharp_Application.csproj" Description="Converted">
+</Event><Event ErrorLevel="0" Project="" Source="C_Sharp_Application.sln" Description="솔루션을 변환했습니다.">
+</Event><Event ErrorLevel="3" Project="" Source="C_Sharp_Application.sln" Description="Converted">
+</Event><Event ErrorLevel="0" Project="C_Sharp_Application" Source="C_Sharp_Application.csproj" Description="검사 완료: 프로젝트 파일을 업그레이드할 필요가 없습니다.">
+</Event></UpgradeLog>

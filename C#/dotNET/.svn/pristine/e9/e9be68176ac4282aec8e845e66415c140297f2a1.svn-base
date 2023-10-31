@@ -1,0 +1,101 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Xml.Serialization;
+using System.IO;
+
+using CH.IO.Comm;
+
+namespace CH.IO.Comm.Interface
+{
+    public class IPC
+    {
+        private class VARIABLE
+        {
+            public object RxClass = null;
+            public Type RxClassType = null;
+
+            public object TxClass = null;
+            public Type TxClassType = null;
+
+            public DEVICE OpenDevice = null;
+        }
+        private VARIABLE g;
+
+        public IPC()
+        {
+            try
+            {
+                g = new VARIABLE();
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public class CONFIG
+        {
+            public object RxClass = null;
+            public Type RxClassType = null;
+
+            public object TxClass = null;
+            public Type TxClassType = null;
+
+            public DEVICE OpenDevice = null;
+        }
+
+        public void Connect(CONFIG config)
+        {
+            try
+            {
+                g.OpenDevice = config.OpenDevice;
+                g.RxClass = config.RxClass;
+                g.RxClassType = config.RxClassType;
+                g.TxClass = config.TxClass;
+                g.TxClassType = config.TxClassType;
+
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public void Disconnect()
+        {
+            try
+            {
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public void thTxSync()
+        {
+            try
+            {
+                if(null != g.OpenDevice)
+                {
+                    using (MemoryStream ms = new MemoryStream())
+                    {
+                        XmlSerializer xs = new XmlSerializer(g.TxClassType);
+                        xs.Serialize(ms, g.TxClass);
+                        ms.Flush();
+                        g.OpenDevice.Write(ms.GetBuffer(), 0, (int)ms.Length);
+                        ms.Close();
+                    }
+                }
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+
+    }
+}

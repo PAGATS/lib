@@ -1,0 +1,768 @@
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+
+namespace CH.Analysis.Signal
+{
+    public class Spectrum
+    {
+        private class VARIABLE
+        {
+            public ArrayList wave = null;
+            public ArrayList power = null;
+
+            public VARIABLE()
+            {
+                wave = new ArrayList();
+                power = new ArrayList();
+            }
+        }
+        private VARIABLE g = null;
+
+        public Spectrum()
+        {
+            try
+            {
+                g = new VARIABLE();
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public Spectrum(double[] WaveLength, double[] PowerDensity)
+        {
+            try
+            {
+                g = new VARIABLE();
+                this.Add(WaveLength, PowerDensity);
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public double this[int n]
+        {
+            get
+            {
+                try
+                {
+                }
+                catch
+                {
+                    throw;
+                }
+                return (double)g.power[n];
+            }
+
+            set
+            {
+                try
+                {
+                    g.power[n] = value;
+                }
+                catch
+                {
+                    throw;
+                }
+            }
+        }
+
+        public Spectrum Clone()
+        {
+            try
+            {
+                return new Spectrum(this.WaveLength, this.PowerDensity);
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public int Count
+        {
+            get
+            {
+                try
+                {
+                    return g.wave.Count;
+                }
+                catch
+                {
+                    throw;
+                }
+            }
+        }
+
+        public double[] PowerDensity
+        {
+            get
+            {
+                try
+                {
+                    return g.power.ToArray(typeof(double)) as double[];
+                }
+                catch
+                {
+                    throw;
+                }
+            }
+        }
+
+        public double[] WaveLength
+        {
+            get
+            {
+                try
+                {
+                    return g.wave.ToArray(typeof(double)) as double[];
+                }
+                catch
+                {
+                    throw;
+                }
+            }
+        }
+
+        public double GetPowerDensity(int index)
+        {
+            try
+            {
+                return (double)g.power[index];
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public void SetPowerDensity(int index, double PowerDensity)
+        {
+            try
+            {
+                g.power[index] = PowerDensity;
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public void RemovePowerDensity(int index)
+        {
+            try
+            {
+                g.power.RemoveAt(index);
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public double GetWaveLength(int index)
+        {
+            try
+            {
+                return (double)g.wave[index];
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public void SetWaveLength(int index, double WaveLength)
+        {
+            try
+            {
+                g.wave[index] = WaveLength;
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public void RemoveWaveLength(int index)
+        {
+            try
+            {
+                g.wave.RemoveAt(index);
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public double Power(double start, double end)
+        {
+            try
+            {
+                if (start > end &&
+                    start >= 0 &&
+                    end >= 0)
+                    throw new Exception("The index of start has to be larger than the index of end.");
+
+                double sum = 0.0;
+                for (int i = 0; i < g.wave.Count; i++)
+                {
+                    if ((start <= ((double)g.wave[i])) && (((double)g.wave[i]) <= end))
+                    {
+                        sum += (double)g.power[i];
+                    }
+                }
+                return sum;
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public void Clear()
+        {
+            try
+            {
+                g.wave.Clear();
+                g.power.Clear();
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public void Add(double WaveLength, double PowerDensity)
+        {
+            try
+            {
+                g.wave.Add(WaveLength);
+                g.power.Add(PowerDensity);
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public void Add(double[] WaveLength, double[] PowerDensity)
+        {
+            try
+            {
+                if (WaveLength.Length != PowerDensity.Length)
+                    throw new Exception("The length of the wave length array has to be same as the length of the power density array.");
+
+                for (int i = 0; i < WaveLength.Length; i++)
+                {
+                    g.wave.Add(WaveLength[i]);
+                    g.power.Add(PowerDensity[i]);
+                }
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public Spectrum SubSpectrum(int start, int end)
+        {
+            try
+            {
+                if (start > end &&
+                    start >= 0 &&
+                    end >= 0)
+                    throw new Exception("The index of start has to be larger than the index of end.");
+
+                double[] bufWave = new double[end - start + 1];
+                double[] bufPower = new double[end - start + 1];
+
+                Array.Copy(this.WaveLength, start, bufWave, 0, bufWave.Length);
+                Array.Copy(this.PowerDensity, start, bufPower, 0, bufPower.Length);
+
+                return new Spectrum(bufWave, bufPower);
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        #region Operators
+        // Operator +
+        public static Spectrum operator +(Spectrum s1, Spectrum s2)
+        {
+            try
+            {
+                if (s1.Count != s2.Count)
+                    throw new Exception("The length of both spectrum has to be same.");
+
+                double[] s1wv = s1.WaveLength;
+                double[] s1pw = s1.PowerDensity;
+                double[] s2pw = s2.PowerDensity;
+                double[] ans = new double[s1pw.Length];
+
+                for (int i = 0; i < s1pw.Length; i++)
+                {
+                    ans[i] = s1pw[i] + s2pw[i];
+                }
+
+                return new Spectrum(s1wv, ans);
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public static Spectrum operator +(double s1, Spectrum s2)
+        {
+            try
+            {
+                double[] s2wv = s2.WaveLength;
+                double[] s2pw = s2.PowerDensity;
+                double[] ans = new double[s2pw.Length];
+
+                for (int i = 0; i < s2pw.Length; i++)
+                {
+                    ans[i] = s1 + s2pw[i];
+                }
+
+                return new Spectrum(s2wv, ans);
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public static Spectrum operator +(Spectrum s1, double s2)
+        {
+            try
+            {
+                double[] s1wv = s1.WaveLength;
+                double[] s1pw = s1.PowerDensity;
+                double[] ans = new double[s1pw.Length];
+
+                for (int i = 0; i < s1pw.Length; i++)
+                {
+                    ans[i] = s1pw[i] + s2;
+                }
+
+                return new Spectrum(s1wv, ans);
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public static Spectrum operator +(double[] s1, Spectrum s2)
+        {
+            try
+            {
+                if (s1.Length != s2.Count)
+                    throw new Exception("The length of both double[] and spectrum has to be same.");
+
+                double[] s2wv = s2.WaveLength;
+                double[] s2pw = s2.PowerDensity;
+                double[] ans = new double[s2pw.Length];
+
+                for (int i = 0; i < s2pw.Length; i++)
+                {
+                    ans[i] = s1[i] + s2pw[i];
+                }
+
+                return new Spectrum(s2wv, ans);
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public static Spectrum operator +(Spectrum s1, double[] s2)
+        {
+            try
+            {
+                if (s2.Length != s1.Count)
+                    throw new Exception("The length of both double[] and spectrum has to be same.");
+
+                double[] s1wv = s1.WaveLength;
+                double[] s1pw = s1.PowerDensity;
+                double[] ans = new double[s1pw.Length];
+
+                for (int i = 0; i < s1pw.Length; i++)
+                {
+                    ans[i] = s1pw[i] + s2[i];
+                }
+
+                return new Spectrum(s1wv, ans);
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        // Operator -
+        public static Spectrum operator -(Spectrum s1, Spectrum s2)
+        {
+            try
+            {
+                if (s1.Count != s2.Count)
+                    throw new Exception("The length of both spectrum has to be same.");
+
+                double[] s1wv = s1.WaveLength;
+                double[] s1pw = s1.PowerDensity;
+                double[] s2pw = s2.PowerDensity;
+                double[] ans = new double[s1pw.Length];
+
+                for (int i = 0; i < s1pw.Length; i++)
+                {
+                    ans[i] = s1pw[i] - s2pw[i];
+                }
+
+                return new Spectrum(s1wv, ans);
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public static Spectrum operator -(double s1, Spectrum s2)
+        {
+            try
+            {
+                double[] s2wv = s2.WaveLength;
+                double[] s2pw = s2.PowerDensity;
+                double[] ans = new double[s2pw.Length];
+
+                for (int i = 0; i < s2pw.Length; i++)
+                {
+                    ans[i] = s1 - s2pw[i];
+                }
+
+                return new Spectrum(s2wv, ans);
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public static Spectrum operator -(Spectrum s1, double s2)
+        {
+            try
+            {
+                double[] s1wv = s1.WaveLength;
+                double[] s1pw = s1.PowerDensity;
+                double[] ans = new double[s1pw.Length];
+
+                for (int i = 0; i < s1pw.Length; i++)
+                {
+                    ans[i] = s1pw[i] - s2;
+                }
+
+                return new Spectrum(s1wv, ans);
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public static Spectrum operator -(double[] s1, Spectrum s2)
+        {
+            try
+            {
+                if (s1.Length != s2.Count)
+                    throw new Exception("The length of both double[] and spectrum has to be same.");
+
+                double[] s2wv = s2.WaveLength;
+                double[] s2pw = s2.PowerDensity;
+                double[] ans = new double[s2pw.Length];
+
+                for (int i = 0; i < s2pw.Length; i++)
+                {
+                    ans[i] = s1[i] - s2pw[i];
+                }
+
+                return new Spectrum(s2wv, ans);
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public static Spectrum operator -(Spectrum s1, double[] s2)
+        {
+            try
+            {
+                if (s2.Length != s1.Count)
+                    throw new Exception("The length of both double[] and spectrum has to be same.");
+
+                double[] s1wv = s1.WaveLength;
+                double[] s1pw = s1.PowerDensity;
+                double[] ans = new double[s1pw.Length];
+
+                for (int i = 0; i < s1pw.Length; i++)
+                {
+                    ans[i] = s1pw[i] - s2[i];
+                }
+
+                return new Spectrum(s1wv, ans);
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+
+        // Operator *
+        public static Spectrum operator *(Spectrum s1, Spectrum s2)
+        {
+            try
+            {
+                if (s1.Count != s2.Count)
+                    throw new Exception("The length of both spectrum has to be same.");
+
+                double[] s1wv = s1.WaveLength;
+                double[] s1pw = s1.PowerDensity;
+                double[] s2pw = s2.PowerDensity;
+                double[] ans = new double[s1pw.Length];
+
+                for (int i = 0; i < s1pw.Length; i++)
+                {
+                    ans[i] = s1pw[i] * s2pw[i];
+                }
+
+                return new Spectrum(s1wv, ans);
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public static Spectrum operator *(Spectrum s1, double s2)
+        {
+            try
+            {
+                double[] s1wv = s1.WaveLength;
+                double[] s1pw = s1.PowerDensity;
+                double[] ans = new double[s1pw.Length];
+
+                for (int i = 0; i < s1pw.Length; i++)
+                {
+                    ans[i] = s1pw[i] * s2;
+                }
+
+                return new Spectrum(s1wv, ans);
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public static Spectrum operator *(double s1, Spectrum s2)
+        {
+            try
+            {
+                double[] s2wv = s2.WaveLength;
+                double[] s2pw = s2.PowerDensity;
+                double[] ans = new double[s2pw.Length];
+
+                for (int i = 0; i < s2pw.Length; i++)
+                {
+                    ans[i] = s1 * s2pw[i];
+                }
+
+                return new Spectrum(s2wv, ans);
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public static Spectrum operator *(double[] s1, Spectrum s2)
+        {
+            try
+            {
+                if (s1.Length != s2.Count)
+                    throw new Exception("The length of both double[] and spectrum has to be same.");
+
+                double[] s2wv = s2.WaveLength;
+                double[] s2pw = s2.PowerDensity;
+                double[] ans = new double[s2pw.Length];
+
+                for (int i = 0; i < s2pw.Length; i++)
+                {
+                    ans[i] = s1[i] * s2pw[i];
+                }
+
+                return new Spectrum(s2wv, ans);
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public static Spectrum operator *(Spectrum s1, double[] s2)
+        {
+            try
+            {
+                if (s2.Length != s1.Count)
+                    throw new Exception("The length of both double[] and spectrum has to be same.");
+
+                double[] s1wv = s1.WaveLength;
+                double[] s1pw = s1.PowerDensity;
+                double[] ans = new double[s1pw.Length];
+
+                for (int i = 0; i < s1pw.Length; i++)
+                {
+                    ans[i] = s1pw[i] * s2[i];
+                }
+
+                return new Spectrum(s1wv, ans);
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+
+        // Operator /
+        public static Spectrum operator /(Spectrum s1, Spectrum s2)
+        {
+            try
+            {
+                if (s1.Count != s2.Count)
+                    throw new Exception("The length of both spectrum has to be same.");
+
+                double[] s1wv = s1.WaveLength;
+                double[] s1pw = s1.PowerDensity;
+                double[] s2pw = s2.PowerDensity;
+                double[] ans = new double[s1pw.Length];
+
+                for (int i = 0; i < s1pw.Length; i++)
+                {
+                    ans[i] = s1pw[i] / s2pw[i];
+                }
+
+                return new Spectrum(s1wv, ans);
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public static Spectrum operator /(Spectrum s1, double s2)
+        {
+            try
+            {
+                double[] s1wv = s1.WaveLength;
+                double[] s1pw = s1.PowerDensity;
+                double[] ans = new double[s1pw.Length];
+
+                for (int i = 0; i < s1pw.Length; i++)
+                {
+                    ans[i] = s1pw[i] / s2;
+                }
+
+                return new Spectrum(s1wv, ans);
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public static Spectrum operator /(double s1, Spectrum s2)
+        {
+            try
+            {
+                double[] s2wv = s2.WaveLength;
+                double[] s2pw = s2.PowerDensity;
+                double[] ans = new double[s2pw.Length];
+
+                for (int i = 0; i < s2pw.Length; i++)
+                {
+                    ans[i] = s1 / s2pw[i];
+                }
+
+                return new Spectrum(s2wv, ans);
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public static Spectrum operator /(double[] s1, Spectrum s2)
+        {
+            try
+            {
+                if (s1.Length != s2.Count)
+                    throw new Exception("The length of both double[] and spectrum has to be same.");
+
+                double[] s2wv = s2.WaveLength;
+                double[] s2pw = s2.PowerDensity;
+                double[] ans = new double[s2pw.Length];
+
+                for (int i = 0; i < s2pw.Length; i++)
+                {
+                    ans[i] = s1[i] / s2pw[i];
+                }
+
+                return new Spectrum(s2wv, ans);
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public static Spectrum operator /(Spectrum s1, double[] s2)
+        {
+            try
+            {
+                if (s2.Length != s1.Count)
+                    throw new Exception("The length of both double[] and spectrum has to be same.");
+
+                double[] s1wv = s1.WaveLength;
+                double[] s1pw = s1.PowerDensity;
+                double[] ans = new double[s1pw.Length];
+
+                for (int i = 0; i < s1pw.Length; i++)
+                {
+                    ans[i] = s1pw[i] / s2[i];
+                }
+
+                return new Spectrum(s1wv, ans);
+            }
+            catch
+            {
+                throw;
+            }
+        }
+        #endregion
+
+
+    }
+}

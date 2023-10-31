@@ -1,0 +1,133 @@
+﻿namespace tbUSART
+{
+    partial class tbUSART_TALK
+    {
+        /// <summary>
+        /// Required designer variable.
+        /// </summary>
+        private System.ComponentModel.IContainer components = null;
+
+        /// <summary>
+        /// Clean up any resources being used.
+        /// </summary>
+        /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing && (components != null))
+            {
+                components.Dispose();
+            }
+            base.Dispose(disposing);
+        }
+
+        #region Windows Form Designer generated code
+
+        /// <summary>
+        /// Required method for Designer support - do not modify
+        /// the contents of this method with the code editor.
+        /// </summary>
+        private void InitializeComponent()
+        {
+            this.cbPort = new System.Windows.Forms.ComboBox();
+            this.btOpen = new System.Windows.Forms.Button();
+            this.tbRx = new System.Windows.Forms.TextBox();
+            this.tbTx = new System.Windows.Forms.TextBox();
+            this.btSend = new System.Windows.Forms.Button();
+            this.label1 = new System.Windows.Forms.Label();
+            this.label2 = new System.Windows.Forms.Label();
+            this.SuspendLayout();
+            // 
+            // cbPort
+            // 
+            this.cbPort.FormattingEnabled = true;
+            this.cbPort.Location = new System.Drawing.Point(12, 12);
+            this.cbPort.Name = "cbPort";
+            this.cbPort.Size = new System.Drawing.Size(81, 20);
+            this.cbPort.TabIndex = 0;
+            this.cbPort.MouseClick += new System.Windows.Forms.MouseEventHandler(this.cbPort_MouseClick);
+            // 
+            // btOpen
+            // 
+            this.btOpen.Location = new System.Drawing.Point(99, 10);
+            this.btOpen.Name = "btOpen";
+            this.btOpen.Size = new System.Drawing.Size(75, 23);
+            this.btOpen.TabIndex = 1;
+            this.btOpen.Text = "Open";
+            this.btOpen.UseVisualStyleBackColor = true;
+            this.btOpen.Click += new System.EventHandler(this.btOpen_Click);
+            // 
+            // tbRx
+            // 
+            this.tbRx.Location = new System.Drawing.Point(38, 39);
+            this.tbRx.Name = "tbRx";
+            this.tbRx.Size = new System.Drawing.Size(406, 21);
+            this.tbRx.TabIndex = 2;
+            // 
+            // tbTx
+            // 
+            this.tbTx.Location = new System.Drawing.Point(38, 66);
+            this.tbTx.Name = "tbTx";
+            this.tbTx.Size = new System.Drawing.Size(406, 21);
+            this.tbTx.TabIndex = 3;
+            // 
+            // btSend
+            // 
+            this.btSend.Location = new System.Drawing.Point(12, 93);
+            this.btSend.Name = "btSend";
+            this.btSend.Size = new System.Drawing.Size(432, 43);
+            this.btSend.TabIndex = 4;
+            this.btSend.Text = "Send";
+            this.btSend.UseVisualStyleBackColor = true;
+            this.btSend.Click += new System.EventHandler(this.btSend_Click);
+            // 
+            // label1
+            // 
+            this.label1.AutoSize = true;
+            this.label1.Location = new System.Drawing.Point(12, 42);
+            this.label1.Name = "label1";
+            this.label1.Size = new System.Drawing.Size(20, 12);
+            this.label1.TabIndex = 5;
+            this.label1.Text = "Rx";
+            // 
+            // label2
+            // 
+            this.label2.AutoSize = true;
+            this.label2.Location = new System.Drawing.Point(12, 69);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(20, 12);
+            this.label2.TabIndex = 6;
+            this.label2.Text = "Tx";
+            // 
+            // tbUSART_RSS
+            // 
+            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 12F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.ClientSize = new System.Drawing.Size(456, 148);
+            this.Controls.Add(this.label2);
+            this.Controls.Add(this.label1);
+            this.Controls.Add(this.btSend);
+            this.Controls.Add(this.tbTx);
+            this.Controls.Add(this.tbRx);
+            this.Controls.Add(this.btOpen);
+            this.Controls.Add(this.cbPort);
+            this.Name = "tbUSART_RSS";
+            this.Text = "USART_RSS Test Bench";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.USART_RSS_FormClosing);
+            this.Load += new System.EventHandler(this.USART_RSS_Load);
+            this.ResumeLayout(false);
+            this.PerformLayout();
+
+        }
+
+        #endregion
+
+        private System.Windows.Forms.ComboBox cbPort;
+        private System.Windows.Forms.Button btOpen;
+        private System.Windows.Forms.TextBox tbRx;
+        private System.Windows.Forms.TextBox tbTx;
+        private System.Windows.Forms.Button btSend;
+        private System.Windows.Forms.Label label1;
+        private System.Windows.Forms.Label label2;
+    }
+}
+

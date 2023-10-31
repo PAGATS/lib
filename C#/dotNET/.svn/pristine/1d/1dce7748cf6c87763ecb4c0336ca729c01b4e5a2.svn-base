@@ -1,0 +1,115 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+
+using CH.IO;
+
+namespace CH.IO.Comm
+{
+    public class tbComm : Device
+    {
+        public override event RxDataEventHandler OnRxData = null;
+        public override event MsgEventHandler OnMsg = null;
+        public override event ErrorEventHandler OnError = null;
+
+        public class CONFIG
+        {
+
+
+        }
+
+        public override void Open(object config)
+        {
+            try
+            {
+            }
+            catch
+            { 
+                throw;
+            }
+        }
+
+        public override void Close()
+        {
+            try
+            {
+            }
+            catch
+            {
+                throw;
+            }
+        }
+
+        public override int Read(byte[] buffer, int offset, int count)
+        {
+            try
+            {
+            }
+            catch
+            {
+                throw;
+            }
+            return 0;
+        }
+
+        public override int Read(byte datum)
+        {
+            try
+            {
+            }
+            catch
+            {
+                throw;
+            }
+            return 0;
+        }
+
+        public class testData
+        {
+            public int Data1 = 1;
+            public int Data2 = 2;
+        }
+
+        public override int Write(byte datum)
+        {
+            try
+            {
+                OnRxData(this, "Test string", typeof(string));
+                byte[] ar = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
+                OnRxData(this, ar, typeof(byte[]));
+                testData td = new testData();
+                td.Data1 = 10;
+                OnRxData(this, td, typeof(testData));
+            }
+            catch
+            {
+                throw;
+            }
+            return 0;
+        }
+
+        public override int Write(byte[] buffer, int offset, int count)
+        {
+            try
+            {
+            }
+            catch
+            {
+                throw;
+            }
+            return 0;
+        }
+
+        public void UniqueMethodForTest()
+        {
+            try
+            {
+            }
+            catch
+            {
+                throw;
+            }
+        }
+    }
+}

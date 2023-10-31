@@ -1,0 +1,29 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+
+using CH.IO.Comm;
+
+namespace CH.IO.Service
+{
+    abstract public class INTERFACE
+    {
+        // Non-blocking call
+        abstract public int Connect(DEVICE openDevice, object config);
+
+        abstract public int Send(Type type, object msg);
+
+        abstract public int Disconnect();
+
+        abstract public object IOCtrl(string type, object cmd);
+        abstract public bool IsConnection { get; }
+
+        // Extension for CH
+        abstract public event MsgEventHandler OnMsg;
+        abstract public event ErrorEventHandler OnError;
+
+        public delegate void MsgEventHandler(object sender, string type, object msg);
+        public delegate void ErrorEventHandler(object sender, string source, Exception err);
+    }
+}

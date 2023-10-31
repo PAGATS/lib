@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?><?xml-stylesheet type='text/xsl' href='_UpgradeReport_Files/UpgradeReport.xslt'?><UpgradeLog>
+<Properties><Property Name="Solution" Value="C_Sharp_Application">
+</Property><Property Name="Solution File" Value="C:\Program Files\AS5216-DLL_1.4_develop\examples\C#2005\C_Sharp_Application.sln">
+</Property><Property Name="Date" Value="vrijdag 21 september 2007">
+</Property><Property Name="Time" Value="9:28">
+</Property></Properties><Event ErrorLevel="0" Project="C_Sharp_Application" Source="C_Sharp_Application.csproj" Description="Project converted successfully">
+</Event><Event ErrorLevel="3" Project="C_Sharp_Application" Source="C_Sharp_Application.csproj" Description="Converted">
+</Event><Event ErrorLevel="0" Project="" Source="C_Sharp_Application.sln" Description="Solution converted successfully">
+</Event><Event ErrorLevel="3" Project="" Source="C_Sharp_Application.sln" Description="Converted">
+</Event><Event ErrorLevel="0" Project="C_Sharp_Application" Source="C_Sharp_Application.csproj" Description="Scan complete: Upgrade not required for project files.">
+</Event></UpgradeLog>

@@ -1,0 +1,111 @@
+﻿namespace tbZygote
+{
+    partial class tbZygote
+    {
+        /// <summary>
+        /// Required designer variable.
+        /// </summary>
+        private System.ComponentModel.IContainer components = null;
+
+        /// <summary>
+        /// Clean up any resources being used.
+        /// </summary>
+        /// <param name="disposing">true if managed resources should be disposed; otherwise, false.</param>
+        protected override void Dispose(bool disposing)
+        {
+            if (disposing && (components != null))
+            {
+                components.Dispose();
+            }
+            base.Dispose(disposing);
+        }
+
+        #region Windows Form Designer generated code
+
+        /// <summary>
+        /// Required method for Designer support - do not modify
+        /// the contents of this method with the code editor.
+        /// </summary>
+        private void InitializeComponent()
+        {
+            this.btOpen = new System.Windows.Forms.Button();
+            this.openFileDialog1 = new System.Windows.Forms.OpenFileDialog();
+            this.btClose = new System.Windows.Forms.Button();
+            this.btWrite = new System.Windows.Forms.Button();
+            this.textBox1 = new System.Windows.Forms.TextBox();
+            this.SuspendLayout();
+            // 
+            // btOpen
+            // 
+            this.btOpen.Location = new System.Drawing.Point(12, 15);
+            this.btOpen.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
+            this.btOpen.Name = "btOpen";
+            this.btOpen.Size = new System.Drawing.Size(161, 61);
+            this.btOpen.TabIndex = 0;
+            this.btOpen.Text = "Open";
+            this.btOpen.UseVisualStyleBackColor = true;
+            this.btOpen.Click += new System.EventHandler(this.btOpen_Click);
+            // 
+            // openFileDialog1
+            // 
+            this.openFileDialog1.FileName = "openFileDialog1";
+            // 
+            // btClose
+            // 
+            this.btClose.Location = new System.Drawing.Point(12, 84);
+            this.btClose.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
+            this.btClose.Name = "btClose";
+            this.btClose.Size = new System.Drawing.Size(161, 61);
+            this.btClose.TabIndex = 1;
+            this.btClose.Text = "Close";
+            this.btClose.UseVisualStyleBackColor = true;
+            this.btClose.Click += new System.EventHandler(this.btClose_Click);
+            // 
+            // btWrite
+            // 
+            this.btWrite.Location = new System.Drawing.Point(252, 228);
+            this.btWrite.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
+            this.btWrite.Name = "btWrite";
+            this.btWrite.Size = new System.Drawing.Size(161, 61);
+            this.btWrite.TabIndex = 2;
+            this.btWrite.Text = "Write";
+            this.btWrite.UseVisualStyleBackColor = true;
+            this.btWrite.Click += new System.EventHandler(this.btWrite_Click);
+            // 
+            // textBox1
+            // 
+            this.textBox1.Location = new System.Drawing.Point(110, 248);
+            this.textBox1.Name = "textBox1";
+            this.textBox1.Size = new System.Drawing.Size(100, 21);
+            this.textBox1.TabIndex = 3;
+            // 
+            // tbZygote
+            // 
+            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
+            this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
+            this.ClientSize = new System.Drawing.Size(425, 302);
+            this.Controls.Add(this.textBox1);
+            this.Controls.Add(this.btWrite);
+            this.Controls.Add(this.btClose);
+            this.Controls.Add(this.btOpen);
+            this.Font = new System.Drawing.Font("Arial", 9F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.Margin = new System.Windows.Forms.Padding(3, 4, 3, 4);
+            this.Name = "tbZygote";
+            this.Text = "Form1";
+            this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.Zygote_FormClosing);
+            this.Load += new System.EventHandler(this.Zygote_Load);
+            this.ResumeLayout(false);
+            this.PerformLayout();
+
+        }
+
+        #endregion
+
+        private System.Windows.Forms.Button btOpen;
+        private System.Windows.Forms.OpenFileDialog openFileDialog1;
+        private System.Windows.Forms.Button btClose;
+        private System.Windows.Forms.Button btWrite;
+        private System.Windows.Forms.TextBox textBox1;
+    }
+}
+
